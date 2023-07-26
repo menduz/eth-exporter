@@ -12,6 +12,8 @@ export type Options = {
   cacheDir: string
   format: string
   includeFees: boolean
+  startDate: Date | null
+  endDate: Date | null
 }
 
 export type Transfer = {
@@ -21,19 +23,19 @@ export type Transfer = {
   nonce: string
   blockHash: string
   from: string
-  contractAddress: string 
+  contractAddress: string
   to: string
   value: string
   tokenName?: string // 'Decentraland',
   tokenSymbol?: string // 'MANA',
-  tokenDecimal?: string 
+  tokenDecimal?: string
   input?: string
-  transactionIndex: string 
-  gas: string 
+  transactionIndex: string
+  gas: string
   gasPrice: string
-  gasUsed: string 
-  cumulativeGasUsed: string 
-  confirmations: string 
+  gasUsed: string
+  cumulativeGasUsed: string
+  confirmations: string
 }
 
 export type Account = {
@@ -56,10 +58,12 @@ export const graph = {
   endBlock: new BigNumber("0"),
   options: {
     cacheDir: ".cache",
-    etherscanApiKey: null,
+    etherscanApiKey: process.env.ETHERSCAN_API_KEY || null,
     format: 'csv',
     includeFees: false,
-    output: 'output.csv'
+    output: 'output.csv',
+    startDate: null,
+    endDate: null
   } as Options
 }
 
@@ -219,7 +223,7 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0x3598d8ab"): // sellEthForTokenToUniswapV3
     case data.startsWith("0xd9627aa4"):
     case data.startsWith("0x77725df6"): // Swap (ETH)
-      return "Swap" 
+      return "Swap"
     case data.startsWith("0xdb1b6948"):
       return "Transfer" // Stake
     case data.startsWith("0xc73a2d60"):
@@ -232,7 +236,7 @@ export function operationTypeBySelector(data: string) {
       return "Gnosis: Exec"
     case data.startsWith("0x13d98d13"): // Tornado: Deposit
     case data.startsWith("0x439370b1"): // depositEth()
-      return "Transfer" 
+      return "Transfer"
   }
 
   return ""
@@ -249,6 +253,11 @@ export async function dumpGraph(filename: string) {
 }
 
 export function filterTransfer($: Transfer) {
+  const date = new Date(1000 * +$.timeStamp)
+
+  if (graph.options.startDate && date < graph.options.startDate) return false
+  if (graph.options.endDate && date > graph.options.endDate) return false
+
   if (graph.hiddenAddressess.has(normalizeAddress($.from))) return false
   if (graph.hiddenAddressess.has(normalizeAddress($.to))) return false
   if (graph.ignoredSymbols.has($.contractAddress)) return false

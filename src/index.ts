@@ -69,7 +69,9 @@ async function readContent(content: string, currentFile: string) {
 async function main() {
   const args = arg({
     '--output': String,
-    '--format': String
+    '--format': String,
+    '--startDate': String,
+    '--endDate': String,
   })
 
   if (!args._.length) throw new Error('an input file must be specified in the CLI');
@@ -80,6 +82,8 @@ async function main() {
 
   if (args["--format"]) graph.options.format = args["--format"]
   if (args["--output"]) graph.options.output = args["--output"]
+  if (args["--startDate"]) graph.options.startDate = new Date(args["--startDate"]!)
+  if (args["--endDate"]) graph.options.endDate = new Date(args["--endDate"]!)
 
   if (!graph.options.etherscanApiKey) throw new Error('ETHERSCAN_API_KEY not specified')
 
