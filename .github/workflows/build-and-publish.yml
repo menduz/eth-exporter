@@ -24,7 +24,8 @@ jobs:
         uses: menduz/oddish-action@master
         with:
           registry-url: 'https://registry.npmjs.org'
+          access: public
           ## sign the deployment
-          provenance: true
+          #provenance: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
