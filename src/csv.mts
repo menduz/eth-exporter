@@ -1,5 +1,5 @@
 import { doubleEntryFromGraph, DoubleEntryResult } from "./double-entry.mjs"
-import { graph, Graph, Options } from "./graph.mjs"
+import { graph, Graph } from "./graph.mjs"
 import { writeFile } from "fs/promises"
 
 export async function dumpCsv(graph: Graph) {
@@ -17,80 +17,39 @@ async function dumpTradesheet(
   filename: string,
   doubleEntry: DoubleEntryResult
 ) {
-  const columnSet = new Set<string>()
-
-  for (let item of doubleEntry.calculatedLineItems) {
-    Object.keys(item.changes).forEach(($) => columnSet.add($))
-  }
-
-  const fixedColumns = ["Date", "Type", "Tx", "Buy", "Sell", "BuyUnits", "SellUnits"]
+  const fixedColumns = ["Date", "Tx", "Symbol", "Contract", "Account", "Credit", "Debit"]
 
   const valuesForGoogle = []
   valuesForGoogle.push([...fixedColumns])
 
-  doubleEntry.calculatedLineItems.forEach((row, ix) => {
-    if (row.trade) {
-      const keysDebit = Object.keys(row.trade.debit)
-      const keysCredit = Object.keys(row.trade.credit)
-
-      if (keysCredit.length > 1 && keysDebit.length > 1 && row.type !== 'Liquidity event') {
-        console.log('OMITTED ROW', row);
-        return
-      }
-
-      const isDeposit = keysCredit.length > 0 && keysDebit.length == 0 || row.type == 'Liquidity event'
-      const isWithdrawal = keysCredit.length == 0 && keysDebit.length > 0 || row.type == 'Liquidity event'
-
-      if (isDeposit) {
-        for (const token of keysCredit) {
-          valuesForGoogle.push([
-            row.date.toISOString(),
-            'Deposit',
-            row.tx,
-            token,
-            '',
-            row.trade.credit[token],
-            '',
-          ])
-        }
-      }
-
-      if (isWithdrawal) {
-        for (const token of keysDebit) {
-          valuesForGoogle.push([
-            row.date.toISOString(),
-            'Withdrawal',
-            row.tx,
-            '',
-            token,
-            '',
-            row.trade.debit[token],
-          ])
-        }
-      }
-
-      if (!isDeposit && !isWithdrawal) {
-        const buy = keysCredit[0] || ''
-        const buyAmount = buy ? row.trade.credit[buy] : 0
-
-        const sell = keysDebit[0] || ''
-        const sellAmount = sell ? row.trade.debit[sell] : 0
-
+  doubleEntry.lineItems.forEach((LI, ix) => {
+    LI.changes.forEach(row => {
+      if (row.accountCredit.added) {
         valuesForGoogle.push([
-          row.date.toISOString(),
-          row.type,
+          LI.date.toISOString(),
           row.tx,
-          buy,
-          sell,
-          buyAmount,
-          sellAmount,
+          row.symbol,
+          row.contractAddress,
+          row.accountCredit.address,
+          row.amount,
+          ''
         ])
       }
-    } else {
-      if (!row.type)
-        console.log(row)
-    }
-  })
+
+      if (row.accountDebit.added) {
+        valuesForGoogle.push([
+          LI.date.toISOString(),
+          row.tx,
+          row.symbol,
+          row.contractAddress,
+          row.accountDebit.address,
+          '',
+          row.amount,
+        ])
+      }
+    })
+  }
+  )
 
   const csv = valuesForGoogle.map($ => $.join(',')).join('\n')
 

@@ -59,13 +59,12 @@ export function doubleEntryFromGraph(graph: Graph) {
   const contractToToken = new Map<string, string>()
   const unknownAccounts = new Set<string>()
 
-  function addLineItem(transfer: Transfer) {
+  function addLineItem(transfer: Transfer | InternalTx) {
     const accountFrom = getAccountFromAddress(transfer.from)
     const accountTo = getAccountFromAddress(transfer.to)
 
-    const someAdded = accountFrom.added || accountTo.added
-
-    if (!someAdded && (accountFrom.hidden || accountTo.hidden) || accountFrom == accountTo) return
+    if (accountFrom.label === accountFrom.address) unknownAccounts.add(accountFrom.address)
+    if (accountTo.label === accountTo.address) unknownAccounts.add(accountTo.address)
 
     if (!lineItems.has(transfer.hash)) {
       lineItems.set(transfer.hash, {
@@ -87,137 +86,63 @@ export function doubleEntryFromGraph(graph: Graph) {
       originalTx: transfer,
     })
 
-    if (
-      !graph.ignoredSymbols.has(normalizeAddress(transfer.contractAddress)) &&
-      !graph.ignoredSymbols.has(transfer.tokenSymbol || "????????")
-    ) {
-      const prev = contractToToken.get(normalizeAddress(transfer.contractAddress))
-      const symbol = transfer.tokenSymbol || "????"
-      if (prev && prev !== symbol) throw new Error("OOPS")
-      contractToToken.set(normalizeAddress(transfer.contractAddress), symbol)
-    }
-
-    const internalTxs = graph.internalTxs.get(transfer.hash)!
-    if (internalTxs) {
-      for (let tx of internalTxs) {
-        const accountDebit = getAccountFromAddress(transfer.to)
-        const accountCredit = getAccountFromAddress(transfer.from)
-
-        if (accountDebit.label === accountDebit.address) unknownAccounts.add(accountDebit.address)
-        if (accountCredit.label === accountCredit.address) unknownAccounts.add(accountCredit.address)
-
-        lineItem.changes.push({
-          tx: transfer.hash,
-          accountDebit,
-          accountCredit,
-          symbol: tx.tokenSymbol || normalizeAddress(tx.contractAddress),
-          contractAddress: normalizeAddress(tx.contractAddress),
-          amount: txValue(tx),
-          originalTx: tx,
-        })
+    if (transfer.contractAddress) {
+      if (
+        !graph.ignoredSymbols.has(normalizeAddress(transfer.contractAddress)) &&
+        !graph.ignoredSymbols.has(transfer.tokenSymbol || "????????")
+      ) {
+        const prev = contractToToken.get(normalizeAddress(transfer.contractAddress))
+        const symbol = transfer.tokenSymbol || "????"
+        if (prev && prev !== symbol) {
+          console.dir({ prev, symbol, transfer })
+          throw new Error("OOPS")
+        }
+        contractToToken.set(normalizeAddress(transfer.contractAddress), symbol)
       }
     }
 
-    lineItem.fees = lineItem.fees.plus(new ethConnect.BigNumber(transfer.gasUsed).multipliedBy(transfer.gasPrice))
-
-    if (accountFrom.added && graph.options.includeFees) {
-      const feesAccount = getAccountFromAddress('0x0000000000000000000000000000000000000000')
-      lineItem.changes.push({
-        tx: transfer.hash,
-        accountDebit: accountFrom,
-        accountCredit: feesAccount,
-        symbol: "ETH",
-        contractAddress: null,
-        amount: lineItem.fees.shiftedBy(-18),
-        originalTx: transfer,
-      })
-    }
+    if ('gasPrice' in transfer && lineItem.fees.eq(0))
+      lineItem.fees = new ethConnect.BigNumber(+transfer.gasUsed).multipliedBy(transfer.gasPrice)
   }
 
-  const alltx: Transfer[] = []
 
+  // add all line items
+  const alltx: (Transfer | InternalTx)[] = []
   Array.from(graph.transactions.values()).forEach((txlist) => alltx.push(...txlist))
-
+  Array.from(graph.internalTxs.values()).forEach((txlist) => alltx.push(...txlist))
   const txs = alltx
     .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? 1 : -1))
     .filter(filterTransfer)
-
   txs.forEach(addLineItem)
+
+  // include fees as line item
+  if (graph.options.includeFees) {
+    const feesAccount = getAccountFromAddress('0x0000000000000000000000000000000000000000')
+    for (const [_, lineItem] of lineItems) {
+      const [{ originalTx }] = lineItem.changes
+      const accountFrom = getAccountFromAddress(originalTx.from)
+
+      if (accountFrom.added) {
+        lineItem.changes.push({
+          tx: originalTx.hash,
+          accountDebit: accountFrom,
+          accountCredit: feesAccount,
+          symbol: "ETH",
+          contractAddress: null,
+          amount: lineItem.fees.shiftedBy(-18),
+          originalTx,
+        })
+      }
+    }
+  }
 
   function key(acct: string, symbol: string) {
     return `${symbol}-${acct}`
   }
 
-  const calculatedLineItems: LineItemColumn[] = []
-  const columns: string[] = []
-  const finalBalance: Record<string, number> = {}
-
-  for (const [_, lineItem] of lineItems) {
-    const txs: (Transfer | InternalTx)[] = []
-    const doubleEntryLine: LineItemColumn = {
-      date: lineItem.date,
-      tx: "",
-      type: "",
-      changes: {},
-      trade: null,
-      lineItem,
-      txs
-    }
-
-    for (let change of lineItem.changes) {
-      doubleEntryLine.tx = change.tx
-      txs.push(change.originalTx)
-      doubleEntryLine.type = doubleEntryLine.type || operationType(graph, change.originalTx.hash)
-
-      if (doubleEntryLine.type == "Transfer" || doubleEntryLine.type == 'Crowdsale' || doubleEntryLine.type == 'Vesting' || doubleEntryLine.type == 'Gnosis: Exec' || doubleEntryLine.type == 'Liquidity event') {
-        if (change.accountDebit.added !== change.accountCredit.added) {
-          doubleEntryLine.trade = doubleEntryLine.trade || { credit: {}, debit: {} }
-          if (change.accountDebit.added) {
-            doubleEntryLine.trade.debit[change.symbol] = (doubleEntryLine.trade.debit[change.symbol] || 0) + change.amount.toNumber()
-          }
-          if (change.accountCredit.added) {
-            doubleEntryLine.trade.credit[change.symbol] = (doubleEntryLine.trade.credit[change.symbol] || 0) + change.amount.toNumber()
-          }
-        } else if (!change.accountDebit.added && !change.accountCredit.added) {
-          console.log('weird line item', inspect(doubleEntryLine, false, 10, true))
-        }
-      } else {
-        doubleEntryLine.trade = doubleEntryLine.trade || { credit: {}, debit: {} }
-        if (change.accountDebit.added) {
-          doubleEntryLine.trade.debit[change.symbol] = (doubleEntryLine.trade.debit[change.symbol] || 0) + change.amount.toNumber()
-        }
-        if (change.accountCredit.added) {
-          doubleEntryLine.trade.credit[change.symbol] = (doubleEntryLine.trade.credit[change.symbol] || 0) + change.amount.toNumber()
-        }
-        if (change.accountDebit.added === change.accountCredit.added) {
-          console.log('weird line item', inspect(doubleEntryLine, false, 10, true))
-        }
-      }
-
-      const keyDebit = key(change.accountDebit.label, change.symbol)
-      doubleEntryLine.changes[keyDebit] = (doubleEntryLine.changes[keyDebit] || 0) - change.amount.toNumber()
-      finalBalance[keyDebit] = (finalBalance[keyDebit] || 0) - change.amount.toNumber()
-
-      const keyCredit = key(change.accountCredit.label, change.symbol)
-      doubleEntryLine.changes[keyCredit] = (doubleEntryLine.changes[keyCredit] || 0) + change.amount.toNumber()
-      finalBalance[keyCredit] = (finalBalance[keyCredit] || 0) + change.amount.toNumber()
-    }
-
-    setBalancesAt(lineItem.date, finalBalance)
-
-    calculatedLineItems.push(doubleEntryLine)
-
-    // populate columns
-    for (let i in doubleEntryLine.changes) {
-      if (!columns.includes(i)) columns.push(i)
-    }
-  }
-
   return {
     getBalancesAt,
-    calculatedLineItems,
-    columns,
-    finalBalance,
+    lineItems,
     contractToToken,
     unknownAccounts,
     txs,

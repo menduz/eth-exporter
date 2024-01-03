@@ -31,6 +31,7 @@ export async function ensureCacheDir() {
 
 export async function fetchWithAttempts(url: string) {
   let attempts = 5
+  let time = 800
   while (attempts) {
     log(`Fetching: %s`, url)
     const req = await fetch(url)
@@ -40,8 +41,11 @@ export async function fetchWithAttempts(url: string) {
         return j
       }
     }
+    console.dir(req)
+    console.log(await req.text())
     attempts--
-    await sleep(800)
+    await sleep(time)
+    time *= 2;
   }
   throw new Error("Attempts exceeded for URL " + url)
 }

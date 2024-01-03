@@ -1,5 +1,5 @@
 import { writeFile } from "fs/promises"
-import { fetchErc20Txs, fetchInternalTxs, fetchTxs, InternalTx } from "./api.mjs"
+import { fetchErc20Txs, fetchInternalTxs, fetchToken1155tx, fetchTxs, InternalTx } from "./api.mjs"
 import { drawGraph, txDate } from "./draw.mjs"
 import { requestManager } from "./rpc.mjs"
 import ethConnect from "eth-connect"
@@ -118,18 +118,31 @@ async function ensureErc20Txs(account: string, startBlock: string) {
     mergeTransactions(graph, tx)
   }
 }
+async function ensureErc1155Txs(account: string, startBlock: string) {
+  const txs: Transfer[] = await fetchToken1155tx(account, startBlock)
+  for (let tx of txs) {
+    mergeTransactions(graph, tx)
+  }
+}
 
 function mergeTransactions(graph: Graph, tx: Transfer) {
   if (tx.input && tx.input != "deprecated") graph.txData.set(tx.hash, tx.input)
 
   const list = graph.transactions.get(tx.hash) || []
 
-  const found = list.filter(
-    ($) => $.from == tx.from && $.to == tx.to && $.value == tx.value && $.tokenSymbol == tx.tokenSymbol
+  const isPresent = list.some(
+    ($) =>
+      $.from == tx.from
+      && $.to == tx.to
+      && $.value == tx.value
+      && $.tokenSymbol == tx.tokenSymbol
+      && $.contractAddress == tx.contractAddress
+      && $.input == tx.input
   )
 
-  if (found.length == 0) {
-    if (tx.value != "" && tx.value != "0x0" && tx.value != "0") list.push(tx)
+  if (!isPresent) {
+    if (tx.value != "" && tx.value != "0x0" && tx.value != "0")
+      list.push(tx)
   }
 
   if (list.length) graph.transactions.set(tx.hash, list)
@@ -144,7 +157,6 @@ async function ensureTxs(account: string, startBlock: string) {
 
 async function ensureInternalTxs(account: string, startBlock: string) {
   const txs = await fetchInternalTxs(account, startBlock)
-
   for (let tx of txs) {
     const list = graph.internalTxs.get(tx.hash) || []
     if (!tx.contractAddress && !tx.tokenSymbol) {
@@ -180,7 +192,7 @@ export async function processGraph() {
     graph.allowedContracts.set(normalizeAddress(x.platforms.ethereum), {
       contract: x.platforms.ethereum,
       name: x.name,
-      symbol: x.symbol
+      symbol: x.symbol.toUpperCase()
     })
   })
 
@@ -188,6 +200,7 @@ export async function processGraph() {
   for (let acc of initialAccounts) {
     if (acc.added) {
       await ensureErc20Txs(acc.address, acc.startBlock || "0")
+      await ensureErc1155Txs(acc.address, acc.startBlock || "0")
       await ensureTxs(acc.address, acc.startBlock || "0")
       await ensureInternalTxs(acc.address, acc.startBlock || "0")
     }
@@ -269,6 +282,7 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0x85f6d155"):
       return "Transfer" // ENS: Register
     case data.startsWith("0x1cff79cd"):
+    case data.startsWith("0xf88bf15a"):
       return "Liquidity event" // "Balancer: Execute"
     case data.startsWith("0x86d1a69f"): // vesting release
     case data.startsWith("0xc01a8c84"): // vesting terminate
@@ -278,8 +292,12 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0x18cbafe5"):
     case data.startsWith("0x3d8d4082"): // executeMetaTransactionV2(tuple mtx,tuple signature)
     case data.startsWith("0x2e95b6c8"):
+    case data.startsWith("0x13d79a0b"):
+    case data.startsWith("0xd0e30db0"): // deposit() (WETH)
     case data.startsWith("0x38ed1739"):
     case data.startsWith("0x4f948110"):
+    case data.startsWith("0x34b0793b"): // discountedSwap(address caller,tuple desc,tuple[] calls)
+    case data.startsWith("0xfb3bdb41"): // swapETHForExactTokens(uint256 amountOut, address[] path, address to, uint256 deadline)
     case data.startsWith("0xaa77476c"): // fillRfqOrder(tuple order,tuple signature,uint128 takerTokenFillAmount)
     case data.startsWith("0x5cf54026"):
     case data.startsWith("0x7a1eb1b9"):
@@ -288,7 +306,12 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0xa578efaf"):
     case data.startsWith("0x3598d8ab"): // sellEthForTokenToUniswapV3
     case data.startsWith("0xd9627aa4"):
+    case data.startsWith("0xf88309d7"):
+    case data.startsWith("0x90411a32"): // swap(address caller,tuple desc,tuple[] calls)
+    case data.startsWith("0xfbabdebd"): // swapSaiToDai(uint256 wad)
     case data.startsWith("0x77725df6"): // Swap (ETH)
+    case data.startsWith("0xcb3c28c7"): // trade(address src, uint256 srcAmount, address dest, address destAddress, uint256 maxDestAmount, uint256 minConversionRate, address walletId)
+    case data.startsWith("0x2e1a7d4d"): // withdraw weth->eth
       return "Swap"
     case data.startsWith("0xdb1b6948"):
       return "Transfer" // Stake
@@ -301,6 +324,7 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0x6a761202"):
       return "Gnosis: Exec"
     case data.startsWith("0x13d98d13"): // Tornado: Deposit
+    case data.startsWith("0x74bd0ace"): // sellNXMTokens(uint256 _amount) (NXM pool)
     case data.startsWith("0x439370b1"): // depositEth()
       return "Transfer"
   }
@@ -318,7 +342,7 @@ export async function dumpGraph(filename: string) {
   await writeFile(filename, dot)
 }
 
-export function filterTransfer($: Transfer) {
+export function filterTransfer($: Transfer | InternalTx) {
   const date = new Date(1000 * +$.timeStamp)
 
   if (graph.options.startDate && date < graph.options.startDate) return false
@@ -330,7 +354,6 @@ export function filterTransfer($: Transfer) {
   if (graph.ignoredSymbols.has($.tokenSymbol || "ETH")) return false
 
   if (!graph.allowedContracts.has(normalizeAddress($.contractAddress))) {
-    log(`Possible spam tx ${$.hash}`)
     return false
   }
 

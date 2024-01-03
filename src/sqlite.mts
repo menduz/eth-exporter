@@ -24,35 +24,44 @@ export async function dumpSqlite(graph: Graph) {
   })
   await dbOpenFuture
   {
+    log(`> Writing LineItem`)
     await exec(db, sql`
       CREATE TABLE LineItem (
         tx varchar,
         date datetime,
-        account_debit varchar,
-        account_credit varchar,
+        account varchar,
         contract_address varchar,
         symbol varchar,
-        amount numeric
+        debit numeric,
+        credit numeric
       );
     `)
 
-    await exec(db, sql`
-    INSERT INTO LineItem (tx, date, account_debit, account_credit, contract_address, symbol, amount)
-    VALUES ${bulk(
-      doubleEntry.calculatedLineItems.flatMap(item =>
-        mapColumns(item.lineItem.changes,
+    await bulkInsert(db, sql`INSERT INTO LineItem (tx, date, account, contract_address, symbol, debit, credit)`,
+      Array.from(doubleEntry.lineItems.values()).flatMap(item =>
+        mapColumns(item.changes,
           $ => $.tx.toLowerCase(),
           $ => item.date,
           $ => normalizeAddress($.accountDebit.address),
+          $ => normalizeAddress($.contractAddress),
+          $ => $.symbol,
+          $ => $.amount,
+          _ => 0
+        ).concat(mapColumns(item.changes,
+          $ => $.tx.toLowerCase(),
+          $ => item.date,
           $ => normalizeAddress($.accountCredit.address),
           $ => normalizeAddress($.contractAddress),
           $ => $.symbol,
-          $ => $.amount
+          _ => 0,
+          $ => $.amount,
         ))
-    )}`)
+      )
+    )
   }
 
   {
+    log(`> Writing Contracts`)
     await exec(db, sql`
       CREATE TABLE Contracts (
         address varchar,
@@ -75,6 +84,7 @@ export async function dumpSqlite(graph: Graph) {
   }
 
   {
+    log(`> Writing Transfers`)
     await exec(db, sql`
       CREATE TABLE Transfers (
         tx varchar,
@@ -87,9 +97,7 @@ export async function dumpSqlite(graph: Graph) {
       );
     `)
 
-    await exec(db, sql`
-    INSERT INTO Transfers (tx, date, account_debit, account_credit, contract, value, type)
-    VALUES ${bulk(
+    await bulkInsert(db, sql`INSERT INTO Transfers (tx, date, account_debit, account_credit, contract, value, type)`,
       mapColumns(Array.from(graph.transactions.values()).flat().filter(filterTransfer),
         $ => $.hash.toLowerCase(),
         $ => new Date(parseInt($.timeStamp) * 1000),
@@ -98,11 +106,11 @@ export async function dumpSqlite(graph: Graph) {
         $ => normalizeAddress($.contractAddress),
         $ => txValue($),
         $ => operationType(graph, $.hash)
-      )
-    )}`)
+      ))
   }
 
   {
+    log(`> Writing DailyPrices`)
     await exec(db, sql`
       CREATE TABLE DailyPrices (
         date date,
@@ -113,19 +121,41 @@ export async function dumpSqlite(graph: Graph) {
     `)
     for (const [key, data] of graph.prices) {
       const c = graph.allowedContracts.get(key)
-      await exec(db, sql`
+      if (data.stats && data.stats.length)
+        await exec(db, sql`
     INSERT INTO DailyPrices (date, symbol, contract, price)
     VALUES ${bulk(
-        mapColumns(data.stats,
-          $ => new Date($[0]),
-          $ => c?.symbol ?? key,
-          $ => c ? normalizeAddress(c.contract) : null,
-          $ => $[1],
-        )
-      )}`)
+          mapColumns(data.stats,
+            $ => new Date($[0]),
+            $ => c?.symbol ?? key,
+            $ => c ? normalizeAddress(c.contract) : null,
+            $ => $[1],
+          )
+        )}`)
     }
   }
 
+
+  {
+    log(`> Writing Accounts`)
+    await exec(db, sql`
+      CREATE TABLE Accounts (
+        address  varchar,
+        label    varchar,
+        added    bool,
+        hidden   bool
+      );
+    `)
+
+    await bulkInsert(db, sql`INSERT INTO Accounts (address, label, added, hidden)`,
+      mapColumns(Array.from(graph.accounts.values()),
+        $ => normalizeAddress($.address),
+        $ => $.label,
+        $ => $.added ?? false,
+        $ => $.hidden ?? false
+      )
+    )
+  }
 
   db.close()
 }
@@ -152,4 +182,12 @@ async function exec(db: sqlite.Database, query: Sql) {
   })
 
   return fut
+}
+
+async function bulkInsert(db: sqlite.Database, smt: Sql, rows: unknown[][]) {
+  while (rows.length) {
+    const toInsert = rows.splice(0, 1000)
+
+    await exec(db, sql`${smt} VALUES ${bulk(toInsert)}`)
+  }
 }

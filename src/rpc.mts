@@ -9,7 +9,8 @@ function providerWithCache(provider: { sendAsync(data: any, callback: ethConnect
 
   return {
     sendAsync(data: any, callback: ethConnect.Callback) {
-      const key = "eth-" + sha256hash(JSON.stringify(data))
+
+      const key = "eth-" + sha256hash(JSON.stringify({ method: data.method, params: data.params }))
       execWithCacheKey(key, () => sendAsyncPromise(data))
         .then((result) => callback(null, result))
         .catch((err) => callback(err))
