@@ -73,6 +73,7 @@ async function main() {
     '--format': String,
     '--startDate': String,
     '--endDate': String,
+    '--includeFees': Boolean,
     '--filter': [String]
   })
 
@@ -88,6 +89,7 @@ async function main() {
   if (args["--output"]) graph.options.output = args["--output"]
   if (args["--startDate"]) graph.options.startDate = new Date(args["--startDate"]!)
   if (args["--endDate"]) graph.options.endDate = new Date(args["--endDate"]!)
+  if (args["--includeFees"]) graph.options.includeFees = true
 
   if (!graph.options.etherscanApiKey) throw new Error('ETHERSCAN_API_KEY not specified')
 
