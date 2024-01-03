@@ -2,7 +2,6 @@ import ethConnect from "eth-connect"
 import { InternalTx } from "./api.mjs"
 import { txValue } from "./draw.mjs"
 import { Account, filterTransfer, getAccountFromAddress, Graph, normalizeAddress, operationType, Options, Transfer } from "./graph.mjs"
-import { inspect } from "util"
 
 export type LineItemChange = {
   tx: string
@@ -39,22 +38,6 @@ export type LineItemColumn = {
 export type DoubleEntryResult = ReturnType<typeof doubleEntryFromGraph>
 
 export function doubleEntryFromGraph(graph: Graph) {
-  const balancesAt = new Map<number, Record<string, number>>()
-
-  function setBalancesAt(date: Date, balances: Record<string, number>) {
-    balancesAt.set(date.getTime(), { ...balances })
-  }
-
-  function getBalancesAt(searchDate: Date): { date: Date; balances: Record<string, number> } {
-    let sortedKeys = Array.from(balancesAt.keys()).sort().reverse()
-    for (const key of sortedKeys) {
-      if (key <= searchDate.getTime()) {
-        return { date: new Date(key), balances: balancesAt.get(key)! }
-      }
-    }
-    return { date: searchDate, balances: {} }
-  }
-
   const lineItems = new Map<string, LineItem>()
   const contractToToken = new Map<string, string>()
   const unknownAccounts = new Set<string>()
@@ -101,8 +84,8 @@ export function doubleEntryFromGraph(graph: Graph) {
       }
     }
 
-    if ('gasPrice' in transfer && lineItem.fees.eq(0))
-      lineItem.fees = new ethConnect.BigNumber(+transfer.gasUsed).multipliedBy(transfer.gasPrice)
+    if ('gasPrice' in transfer && 'gasUsed' in transfer && lineItem.fees.eq(0))
+      lineItem.fees = new ethConnect.BigNumber(transfer.gasUsed).multipliedBy(transfer.gasPrice)
   }
 
 
@@ -117,12 +100,12 @@ export function doubleEntryFromGraph(graph: Graph) {
 
   // include fees as line item
   if (graph.options.includeFees) {
-    const feesAccount = getAccountFromAddress('0x0000000000000000000000000000000000000000')
     for (const [_, lineItem] of lineItems) {
       const [{ originalTx }] = lineItem.changes
       const accountFrom = getAccountFromAddress(originalTx.from)
 
-      if (accountFrom.added) {
+      if (accountFrom.added && lineItem.fees.gt(0)) {
+        const feesAccount = getAccountFromAddress('0x0000000000000000000000000000000000000000')
         lineItem.changes.push({
           tx: originalTx.hash,
           accountDebit: accountFrom,
@@ -136,12 +119,7 @@ export function doubleEntryFromGraph(graph: Graph) {
     }
   }
 
-  function key(acct: string, symbol: string) {
-    return `${symbol}-${acct}`
-  }
-
   return {
-    getBalancesAt,
     lineItems,
     contractToToken,
     unknownAccounts,

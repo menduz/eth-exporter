@@ -137,7 +137,6 @@ function mergeTransactions(graph: Graph, tx: Transfer) {
       && $.value == tx.value
       && $.tokenSymbol == tx.tokenSymbol
       && $.contractAddress == tx.contractAddress
-      && $.input == tx.input
   )
 
   if (!isPresent) {
