@@ -14,9 +14,9 @@ const { BigNumber } = ethConnect
 export async function dumpSqlite(graph: Graph) {
   console.log("> Processing operations")
   const doubleEntry = doubleEntryFromGraph(graph)
-
-  rmSync(graph.options.output)
-
+  try {
+    rmSync(graph.options.output)
+  } catch { }
   const dbOpenFuture = future<void>()
   const db = new Database(graph.options.output, (err) => {
     if (err) dbOpenFuture.reject(err);
