@@ -40,9 +40,13 @@ export async function fetchWithAttempts(url: string) {
       if (j.result !== "Max rate limit reached") {
         return j
       }
+      console.dir(j)
+    } else {
+      try {
+        console.log(await req.text())
+      } catch { }
     }
     console.dir(req)
-    console.log(await req.text())
     attempts--
     await sleep(time)
     time *= 2;
