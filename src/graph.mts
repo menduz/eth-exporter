@@ -304,6 +304,7 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0xcb3c28c7"): // trade(address src, uint256 srcAmount, address dest, address destAddress, uint256 maxDestAmount, uint256 minConversionRate, address walletId)
     case data.startsWith("0x2e1a7d4d"): // withdraw weth->eth
       return "Swap"
+    case data.startsWith("0x1a695230"):
     case data.startsWith("0xdb1b6948"):
       return "Transfer" // Stake
     case data.startsWith("0xc73a2d60"):
