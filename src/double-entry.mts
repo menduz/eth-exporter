@@ -67,15 +67,17 @@ export function doubleEntryFromGraph(graph: Graph) {
       }
     }
 
-    lineItem.changes.push({
-      tx: transfer.hash,
-      accountDebit: accountFrom,
-      accountCredit: accountTo,
-      symbol: transfer.tokenSymbol || "ETH",
-      amount: txValue(transfer),
-      contractAddress: normalizeAddress(transfer.contractAddress),
-      originalTx: transfer,
-    })
+    if (!lineItem.changes.some($ => $.originalTx == transfer)) {
+      lineItem.changes.push({
+        tx: transfer.hash,
+        accountDebit: accountFrom,
+        accountCredit: accountTo,
+        symbol: transfer.tokenSymbol || "ETH",
+        amount: txValue(transfer),
+        contractAddress: normalizeAddress(transfer.contractAddress),
+        originalTx: transfer,
+      })
+    }
 
     if (transfer.contractAddress) {
       if (
@@ -104,21 +106,24 @@ export function doubleEntryFromGraph(graph: Graph) {
 
   // include fees as line item
   if (graph.options.includeFees) {
-    for (const [_, lineItem] of lineItems) {
-      const [{ originalTx }] = lineItem.changes
-      const accountFrom = getAccountFromAddress(originalTx.from)
+    for (const [hash, lineItem] of lineItems) {
+      const tx = graph.txData.get(hash)
 
-      if (accountFrom.added && lineItem.fees.gt(0)) {
-        const feesAccount = getAccountFromAddress('0x0000000000000000000000000000000000000000')
-        lineItem.changes.push({
-          tx: originalTx.hash,
-          accountDebit: accountFrom,
-          accountCredit: feesAccount,
-          symbol: "ETH",
-          contractAddress: null,
-          amount: lineItem.fees.shiftedBy(-18),
-          originalTx,
-        })
+      if (tx) {
+        const accountFrom = getAccountFromAddress(tx.from)
+        const [{ originalTx }] = lineItem.changes
+        if (accountFrom.added && lineItem.fees.gt(0)) {
+          const feesAccount = getAccountFromAddress('0x0000000000000000000000000000000000000000')
+          lineItem.changes.push({
+            tx: hash,
+            accountDebit: accountFrom,
+            accountCredit: feesAccount,
+            symbol: "ETH",
+            contractAddress: null,
+            amount: lineItem.fees.shiftedBy(-18),
+            originalTx,
+          })
+        }
       }
     }
   }
