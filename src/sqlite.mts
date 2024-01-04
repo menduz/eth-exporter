@@ -92,21 +92,24 @@ export async function dumpSqlite(graph: Graph) {
         account_debit varchar,
         account_credit varchar,
         contract varchar,
+        symbol varchar,
         value numeric,
         type varchar
       );
     `)
 
-    await bulkInsert(db, sql`INSERT INTO Transfers (tx, date, account_debit, account_credit, contract, value, type)`,
-      mapColumns(Array.from(graph.transactions.values()).flat().filter(filterTransfer),
-        $ => $.hash.toLowerCase(),
-        $ => new Date(parseInt($.timeStamp) * 1000),
-        $ => normalizeAddress($.from),
-        $ => normalizeAddress($.to),
-        $ => normalizeAddress($.contractAddress),
-        $ => txValue($),
-        $ => operationType(graph, $.hash)
-      ))
+    await bulkInsert(db, sql`INSERT INTO Transfers (tx, date, account_debit, account_credit, contract, symbol, value, type)`,
+      Array.from(doubleEntry.lineItems.values()).flatMap(item =>
+        mapColumns(item.changes,
+          $ => $.tx.toLowerCase(),
+          $ => item.date,
+          $ => normalizeAddress($.accountDebit.address),
+          $ => normalizeAddress($.accountCredit.address),
+          $ => normalizeAddress($.contractAddress),
+          $ => $.symbol,
+          $ => $.amount,
+          $ => operationType(graph, $.tx)
+        )))
   }
 
   {
@@ -169,11 +172,12 @@ export async function dumpSqlite(graph: Graph) {
         gas_price    numeric,
         value        numeric,
         block_number numeric,
-        gas_used     numeric
+        gas_used     numeric,
+        effective_gas_price numeric
       );
     `)
 
-    await bulkInsert(db, sql`INSERT INTO Transactions (tx, input, sender, receiver, gas, gas_price, value, block_number, gas_used)`,
+    await bulkInsert(db, sql`INSERT INTO Transactions (tx, input, sender, receiver, gas, gas_price, value, block_number, gas_used, effective_gas_price)`,
       mapColumns(Array.from(graph.txData.values()),
         $ => $.hash,
         $ => $.input,
@@ -184,6 +188,7 @@ export async function dumpSqlite(graph: Graph) {
         $ => $.value,
         $ => $.blockNumber,
         $ => graph.receipts.get($.hash)?.gasUsed,
+        $ => ethConnect.toDecimal((graph.receipts.get($.hash) as any)?.effectiveGasPrice ?? '0x0'),
       )
     )
   }
