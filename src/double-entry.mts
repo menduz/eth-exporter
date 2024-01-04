@@ -1,5 +1,4 @@
 import ethConnect from "eth-connect"
-import { InternalTx } from "./api.mjs"
 import { txValue } from "./draw.mjs"
 import { Account, filterTransfer, getAccountFromAddress, Graph, normalizeAddress, operationType, Options, Transfer } from "./graph.mjs"
 
@@ -9,7 +8,7 @@ export type LineItemChange = {
   accountCredit: Account
   symbol: string
   amount: ethConnect.BigNumber
-  originalTx: Transfer | InternalTx
+  originalTx: Transfer
   contractAddress: null | string
 }
 
@@ -32,7 +31,7 @@ export type LineItemColumn = {
   changes: Record<string, number>
   trade: null | TradeRecord
   lineItem: LineItem
-  txs: (Transfer | InternalTx)[]
+  txs: Transfer[]
 }
 
 export type DoubleEntryResult = ReturnType<typeof doubleEntryFromGraph>
@@ -42,7 +41,7 @@ export function doubleEntryFromGraph(graph: Graph) {
   const contractToToken = new Map<string, string>()
   const unknownAccounts = new Set<string>()
 
-  function addLineItem(transfer: Transfer | InternalTx) {
+  function addLineItem(transfer: Transfer) {
     const accountFrom = getAccountFromAddress(transfer.from)
     const accountTo = getAccountFromAddress(transfer.to)
 
@@ -58,6 +57,15 @@ export function doubleEntryFromGraph(graph: Graph) {
     }
 
     const lineItem = lineItems.get(transfer.hash)!
+
+    const data = graph.receipts.get(transfer.hash)
+
+    if (data) {
+      const fees = new ethConnect.BigNumber(data.gasUsed).multipliedBy(ethConnect.toDecimal((data as any).effectiveGasPrice ?? '0x0'))
+      if (fees.gt(lineItem.fees)) {
+        lineItem.fees = fees
+      }
+    }
 
     lineItem.changes.push({
       tx: transfer.hash,
@@ -83,16 +91,12 @@ export function doubleEntryFromGraph(graph: Graph) {
         contractToToken.set(normalizeAddress(transfer.contractAddress), symbol)
       }
     }
-
-    if ('gasPrice' in transfer && 'gasUsed' in transfer && lineItem.fees.eq(0))
-      lineItem.fees = new ethConnect.BigNumber(transfer.gasUsed).multipliedBy(transfer.gasPrice)
   }
 
 
   // add all line items
-  const alltx: (Transfer | InternalTx)[] = []
+  const alltx: Transfer[] = []
   Array.from(graph.transactions.values()).forEach((txlist) => alltx.push(...txlist))
-  Array.from(graph.internalTxs.values()).forEach((txlist) => alltx.push(...txlist))
   const txs = alltx
     .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? 1 : -1))
     .filter(filterTransfer)

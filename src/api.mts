@@ -1,4 +1,5 @@
 import { fetchWithCache } from "./fetcher.mjs"
+import { Transfer } from "./graph.mjs"
 
 export async function fetchToken1155tx(address: string, startBlock: number | string) {
   const url = `https://api.etherscan.io/api?module=account&action=token1155tx&address=${address}&startblock=${startBlock}&endblock=:END_BLOCK:&sort=asc&apikey=:ETHERSCAN_API_KEY:`
@@ -31,18 +32,7 @@ export async function fetchTxs(address: string, startBlock: number | string) {
 
 }
 
-export type InternalTx = {
-  blockNumber: string
-  timeStamp: string
-  hash: string
-  from: string
-  to: string
-  value: string
-  contractAddress: string
-  tokenSymbol: string
-}
-
-export async function fetchInternalTxs(address: string, startBlock: number | string): Promise<InternalTx[]> {
+export async function fetchInternalTxs(address: string, startBlock: number | string): Promise<Transfer[]> {
   const url = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=${startBlock}&endblock=:END_BLOCK:&sort=asc&apikey=:ETHERSCAN_API_KEY:`
   return await fetchWithCache(url, (ret, fromCache) => {
     if (Array.isArray(ret.result)) {

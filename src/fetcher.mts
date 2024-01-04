@@ -7,10 +7,11 @@ const { RequestManager, HTTPProvider, BigNumber } = ethConnect
 import { log } from "./log.mjs"
 import { Options, graph } from "./graph.mjs"
 import path from "path"
+
 const provider = new HTTPProvider("https://cloudflare-eth.com")
 provider.debug = true
-export const rm = new RequestManager(provider)
 
+const requestManagerWithoutCache = new RequestManager(provider)
 let currentBlock = new BigNumber("0")
 
 function sleep(ms: number) {
@@ -99,7 +100,7 @@ function cacheFile(name: string) {
 
 export async function setEndBlock(value: string) {
   if (value == "latest") {
-    graph.endBlock = new BigNumber(await rm.eth_blockNumber())
+    graph.endBlock = new BigNumber(await requestManagerWithoutCache.eth_blockNumber())
   } else {
     const bnValue = new BigNumber(value)
     graph.endBlock = bnValue
@@ -108,7 +109,7 @@ export async function setEndBlock(value: string) {
 
 export async function initFetcher() {
   await ensureCacheDir()
-  currentBlock = new BigNumber(await rm.eth_blockNumber())
+  currentBlock = new BigNumber(await requestManagerWithoutCache.eth_blockNumber())
 
   if (graph.endBlock.toNumber() < 1) graph.endBlock = currentBlock
 

@@ -1,8 +1,8 @@
 import { writeFile } from "fs/promises"
-import { fetchErc20Txs, fetchInternalTxs, fetchToken1155tx, fetchTxs, InternalTx } from "./api.mjs"
+import { fetchErc20Txs, fetchInternalTxs, fetchToken1155tx, fetchTxs } from "./api.mjs"
 import { drawGraph, txDate } from "./draw.mjs"
 import { requestManager } from "./rpc.mjs"
-import ethConnect from "eth-connect"
+import ethConnect, { getAddress } from "eth-connect"
 const { BigNumber } = ethConnect
 import { fetchWithCache } from "./fetcher.mjs"
 import { log } from "./log.mjs"
@@ -22,8 +22,6 @@ export type Transfer = {
   blockNumber: string
   timeStamp: string
   hash: string
-  nonce: string
-  blockHash: string
   from: string
   contractAddress: string
   to: string
@@ -32,12 +30,8 @@ export type Transfer = {
   tokenSymbol?: string // 'MANA',
   tokenDecimal?: string
   input?: string
-  transactionIndex: string
-  gas: string
-  gasPrice: string
-  gasUsed: string
-  cumulativeGasUsed: string
-  confirmations: string
+  gasPrice?: string
+  gasUsed?: string
 }
 
 export type Account = {
@@ -55,8 +49,8 @@ export const graph = {
   cluster: new Map<string, RegExp>(),
   ignoredSymbols: new Set<string>(),
   allowedContracts: new Map<string, { symbol: string, contract: string, name: string, api_symbol?: string }>(),
-  internalTxs: new Map<string, InternalTx[]>(),
-  txData: new Map<string, string>(),
+  txData: new Map<string, ethConnect.TransactionObject>(),
+  receipts: new Map<string, ethConnect.TransactionReceipt>(),
   endBlock: new BigNumber("0"),
   latestTimestamp: new Date(1970, 0, 0),
   prices: new Map<string /* contract */, { stats: [[number, number]], total_volumes: [[number, number]] }>,
@@ -84,6 +78,7 @@ export function normalizeAddress(address: string | null): string | null {
 
 export function getAccountFromAddress(address: string) {
   const normalizedAddress = normalizeAddress(address)
+
   if (!graph.accounts.has(normalizedAddress)) {
     const account: Account = {
       address,
@@ -94,10 +89,9 @@ export function getAccountFromAddress(address: string) {
       },
     }
     graph.accounts.set(normalizedAddress, account)
-    return account
-  } else {
-    return graph.accounts.get(normalizedAddress)!
   }
+
+  return graph.accounts.get(normalizedAddress)!
 }
 
 export function addAccounts(...addr: string[]) {
@@ -126,8 +120,6 @@ async function ensureErc1155Txs(account: string, startBlock: string) {
 }
 
 function mergeTransactions(graph: Graph, tx: Transfer) {
-  if (tx.input && tx.input != "deprecated") graph.txData.set(tx.hash, tx.input)
-
   const list = graph.transactions.get(tx.hash) || []
 
   const isPresent = list.some(
@@ -157,18 +149,19 @@ async function ensureTxs(account: string, startBlock: string) {
 async function ensureInternalTxs(account: string, startBlock: string) {
   const txs = await fetchInternalTxs(account, startBlock)
   for (let tx of txs) {
-    const list = graph.internalTxs.get(tx.hash) || []
+    const list = graph.transactions.get(tx.hash) || []
     if (!tx.contractAddress && !tx.tokenSymbol) {
       tx.tokenSymbol = "ETH"
     }
     list.push(tx)
-    graph.internalTxs.set(tx.hash, list)
+    graph.transactions.set(tx.hash, list)
   }
 }
 
 async function fetchRequiredPrices(contract: string) {
   if (graph.prices.has(contract)) return
   const token = graph.allowedContracts.get(contract)
+
   if (!token || !token.api_symbol) {
     return
   }
@@ -207,10 +200,13 @@ export async function processGraph() {
   console.timeEnd("> Fetching accounts transaction list")
 
   console.time("> Fetching transaction details")
-  for (const [tx] of graph.transactions) {
-    if (!graph.txData.has(tx)) {
-      const txData = await requestManager.eth_getTransactionByHash(tx)
-      graph.txData.set(tx, txData.input)
+  for (const [tx, data] of graph.transactions) {
+    const txData = await requestManager.eth_getTransactionByHash(tx)
+    graph.txData.set(tx, txData)
+
+    if (!graph.receipts.has(tx) && getAccountFromAddress(txData.from).added) {
+      const receipt = await requestManager.eth_getTransactionReceipt(tx)
+      graph.receipts.set(tx, receipt)
     }
   }
   console.timeEnd("> Fetching transaction details")
@@ -262,11 +258,7 @@ export async function processGraph() {
 export function getSender(graph: Graph, hash: string) {
   const tx = graph.transactions.get(hash)
   if (tx?.length) {
-    return tx[0].from
-  }
-  const intx = graph.internalTxs.get(hash)
-  if (intx?.length) {
-    return intx[0].from
+    return normalizeAddress(tx[0].from)
   }
   return "unknown"
 }
@@ -332,7 +324,7 @@ export function operationTypeBySelector(data: string) {
 }
 
 export function operationType(graph: Graph, tx: string) {
-  const data = graph.txData.get(tx)?.toLowerCase() || ""
+  const data = graph.txData.get(tx)?.input.toLowerCase() || ""
   return operationTypeBySelector(data)
 }
 
@@ -341,18 +333,16 @@ export async function dumpGraph(filename: string) {
   await writeFile(filename, dot)
 }
 
-export function filterTransfer($: Transfer | InternalTx) {
+export function filterTransfer($: Transfer) {
   const date = new Date(1000 * +$.timeStamp)
 
   if (graph.options.startDate && date < graph.options.startDate) return false
   if (graph.options.endDate && date > graph.options.endDate) return false
 
-  if (graph.hiddenAddressess.has(normalizeAddress($.from))) return false
-  if (graph.hiddenAddressess.has(normalizeAddress($.to))) return false
   if (graph.ignoredSymbols.has(normalizeAddress($.contractAddress))) return false
   if (graph.ignoredSymbols.has($.tokenSymbol || "ETH")) return false
 
-  if (!graph.allowedContracts.has(normalizeAddress($.contractAddress))) {
+  if ($.contractAddress && !graph.allowedContracts.has(normalizeAddress($.contractAddress))) {
     return false
   }
 

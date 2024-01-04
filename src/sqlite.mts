@@ -157,6 +157,37 @@ export async function dumpSqlite(graph: Graph) {
     )
   }
 
+  {
+    log(`> Writing Transactions`)
+    await exec(db, sql`
+      CREATE TABLE Transactions (
+        tx           varchar,
+        input        varchar,
+        sender       varchar,
+        receiver     varchar,
+        gas          numeric,
+        gas_price    numeric,
+        value        numeric,
+        block_number numeric,
+        gas_used     numeric
+      );
+    `)
+
+    await bulkInsert(db, sql`INSERT INTO Transactions (tx, input, sender, receiver, gas, gas_price, value, block_number, gas_used)`,
+      mapColumns(Array.from(graph.txData.values()),
+        $ => $.hash,
+        $ => $.input,
+        $ => normalizeAddress($.from),
+        $ => normalizeAddress($.to),
+        $ => $.gas,
+        $ => $.gasPrice,
+        $ => $.value,
+        $ => $.blockNumber,
+        $ => graph.receipts.get($.hash)?.gasUsed,
+      )
+    )
+  }
+
   db.close()
 }
 

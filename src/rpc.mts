@@ -2,7 +2,7 @@
 import ethConnect from "eth-connect"
 const { RequestManager, HTTPProvider, SolidityEvent } = ethConnect
 import { promisify } from "util"
-import { cacheHit, fetchWithAttempts, readCache, sha256hash, writeCache } from "./fetcher.mjs"
+import { cacheHit, readCache, sha256hash, writeCache } from "./fetcher.mjs"
 
 function providerWithCache(provider: { sendAsync(data: any, callback: ethConnect.Callback): void }) {
   const sendAsyncPromise = promisify<any, any>(provider.sendAsync.bind(provider))
