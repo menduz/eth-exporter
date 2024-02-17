@@ -17,8 +17,10 @@
     "eth-connect": "^6.2.1",
     "fp-future": "^1.0.1",
     "isomorphic-fetch": "^3.0.0",
+    "node-libcurl": "^4.0.0",
     "sql-template-tag": "^5.2.0",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "undici": "^6.6.2"
   },
   "devDependencies": {
     "@types/node": "^14.14.37",

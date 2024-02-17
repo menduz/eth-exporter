@@ -1,4 +1,3 @@
-import "isomorphic-fetch"
 import * as fs from "fs"
 import * as fsp from "fs/promises"
 import * as crypto from "crypto"
@@ -7,6 +6,9 @@ const { RequestManager, HTTPProvider, BigNumber } = ethConnect
 import { log } from "./log.mjs"
 import { Options, graph } from "./graph.mjs"
 import path from "path"
+import undici from "undici"
+
+  ; (globalThis as any).fetch = undici.fetch
 
 const provider = new HTTPProvider("https://cloudflare-eth.com")
 provider.debug = true
@@ -35,7 +37,7 @@ export async function fetchWithAttempts(url: string) {
   let time = 800
   while (attempts) {
     log(`Fetching: %s`, url)
-    const req = await fetch(url, {
+    const req = await undici.fetch(url, {
       "credentials": "include",
       "headers": {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
@@ -54,7 +56,7 @@ export async function fetchWithAttempts(url: string) {
       "mode": "cors"
     })
     if (req.ok) {
-      const j = await req.json()
+      const j: any = await req.json()
       if (j.result !== "Max rate limit reached") {
         return j
       }

@@ -53,7 +53,7 @@ export const graph = {
   receipts: new Map<string, ethConnect.TransactionReceipt>(),
   endBlock: new BigNumber("0"),
   latestTimestamp: new Date(1970, 0, 0),
-  prices: new Map<string /* contract */, { stats: [[number, number]], total_volumes: [[number, number]] }>,
+  prices: new Map<string /* contract */, { prices: [[number, number]] }>,
   options: {
     cacheDir: ".cache",
     etherscanApiKey: process.env.ETHERSCAN_API_KEY || null,
@@ -167,10 +167,15 @@ async function fetchRequiredPrices(contract: string) {
   }
 
   log(`Fetching prices of ${token.contract}\t${token.name}`)
+  console.dir(token)
 
-  const result = await fetchWithCache(`https://www.coingecko.com/price_charts/${encodeURIComponent(token.api_symbol)}/usd/custom.json?from=0&to=${(graph.latestTimestamp.getTime() / 1000) | 0}`, a => a)
+  await fetchSymbolMarketData(token.api_symbol, contract)
+}
 
-  graph.prices.set(token.contract, result)
+async function fetchSymbolMarketData(symbol: string, contract: string) {
+
+  const result = await fetchWithCache(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(symbol)}/market_chart/range?vs_currency=usd&to=${(graph.latestTimestamp.getTime() / 1000) | 0}&from=0`, a => a)
+  graph.prices.set(contract, result)
 }
 
 export async function processGraph() {
@@ -241,13 +246,8 @@ export async function processGraph() {
   }
 
   {
-    const result = await fetchWithCache(`https://www.coingecko.com/price_charts/bitcoin/usd/custom.json?from=0&to=${(graph.latestTimestamp.getTime() / 1000) | 0}`, a => a)
-    graph.prices.set('btc', result)
-  }
-
-  {
-    const result = await fetchWithCache(`https://www.coingecko.com/price_charts/ethereum/usd/custom.json?from=0&to=${(graph.latestTimestamp.getTime() / 1000) | 0}`, a => a)
-    graph.prices.set('eth', result)
+    await fetchSymbolMarketData('bitcoin', 'btc')
+    await fetchSymbolMarketData('ethereum', 'eth')
   }
 
   // for (let [tx] of graph.transactions) {

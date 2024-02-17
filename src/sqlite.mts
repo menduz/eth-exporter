@@ -124,11 +124,11 @@ export async function dumpSqlite(graph: Graph) {
     `)
     for (const [key, data] of graph.prices) {
       const c = graph.allowedContracts.get(key)
-      if (data.stats && data.stats.length)
+      if (data.prices && data.prices.length)
         await exec(db, sql`
     INSERT INTO DailyPrices (date, symbol, contract, price)
     VALUES ${bulk(
-          mapColumns(data.stats,
+          mapColumns(data.prices,
             $ => new Date($[0]),
             $ => c?.symbol ?? key,
             $ => c ? normalizeAddress(c.contract) : null,
