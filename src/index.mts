@@ -30,6 +30,9 @@ async function readContent(content: string, currentFile: string) {
       case "etherscanApiKey":
         graph.options.etherscanApiKey = args[0]
         continue
+      case "coingeckoApiKey":
+        graph.options.coingeckoApiKey = args[0]
+        continue
       case "ignoreSymbols":
         args.forEach($ => graph.ignoredSymbols.add(normalizeAddress($.trim())))
         continue

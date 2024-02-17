@@ -10,6 +10,7 @@ import { log } from "./log.mjs"
 export type Options = {
   output: string
   etherscanApiKey: string | null,
+  coingeckoApiKey: string | null,
   cacheDir: string
   format: string
   includeFees: boolean
@@ -48,7 +49,7 @@ export const graph = {
   hiddenAddressess: new Set<string>(),
   cluster: new Map<string, RegExp>(),
   ignoredSymbols: new Set<string>(),
-  allowedContracts: new Map<string, { symbol: string, contract: string, name: string, api_symbol?: string }>(),
+  allowedContracts: new Map<string, { symbol: string, contract: string, name: string, coingeckoId?: string, present: boolean }>(),
   txData: new Map<string, ethConnect.TransactionObject>(),
   receipts: new Map<string, ethConnect.TransactionReceipt>(),
   endBlock: new BigNumber("0"),
@@ -57,6 +58,7 @@ export const graph = {
   options: {
     cacheDir: ".cache",
     etherscanApiKey: process.env.ETHERSCAN_API_KEY || null,
+    coingeckoApiKey: process.env.COINGECKO_API_KEY || null,
     format: 'csv',
     includeFees: false,
     output: 'output.csv',
@@ -162,18 +164,15 @@ async function fetchRequiredPrices(contract: string) {
   if (graph.prices.has(contract)) return
   const token = graph.allowedContracts.get(contract)
 
-  if (!token || !token.api_symbol) {
+  if (!token || !token.coingeckoId) {
     return
   }
 
-  log(`Fetching prices of ${token.contract}\t${token.name}`)
-  console.dir(token)
-
-  await fetchSymbolMarketData(token.api_symbol, contract)
+  log(`Fetching prices of ${token.contract}\t${token.name}\t${token.coingeckoId}`)
+  await fetchSymbolMarketData(token.coingeckoId, contract)
 }
 
 async function fetchSymbolMarketData(symbol: string, contract: string) {
-
   const result = await fetchWithCache(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(symbol)}/market_chart/range?vs_currency=usd&to=${(graph.latestTimestamp.getTime() / 1000) | 0}&from=0`, a => a)
   graph.prices.set(contract, result)
 }
@@ -182,14 +181,16 @@ export async function processGraph() {
   const initialAccounts = new Set(graph.accounts.values())
 
   console.log("> Fetching allowed tokens from coingecko")
-  const symbols: any[] = await fetchWithCache("https://api.coingecko.com/api/v3/coins/list?include_platform=true", a => a)
+  const symbols: any[] = await fetchWithCache(`https://api.coingecko.com/api/v3/coins/list?include_platform=true&x_to_block=${graph.endBlock}`, a => a)
   const allowed = symbols.filter(x => 'ethereum' in x.platforms)
 
   allowed.forEach(x => {
     graph.allowedContracts.set(normalizeAddress(x.platforms.ethereum), {
       contract: x.platforms.ethereum,
       name: x.name,
-      symbol: x.symbol.toUpperCase()
+      symbol: x.symbol.toUpperCase(),
+      coingeckoId: x.id,
+      present: false
     })
   })
 
@@ -226,20 +227,6 @@ export async function processGraph() {
     const contract = normalizeAddress(tx.contractAddress)
     hasBalanceOf.add(contract)
   })
-
-  {
-    // coingecko top1000 list
-    const result = await fetchWithCache(`https://api.coingecko.com/api/v3/search?from=0&to=${(graph.latestTimestamp.getTime() / 1000) | 0}`, a => a)
-    const { coins } = result
-
-    for (const [_, contract] of graph.allowedContracts) {
-      const found = coins.find(($: any) => $.symbol.toUpperCase() == contract.symbol.toUpperCase())
-      if (found) {
-        contract.api_symbol = found.api_symbol
-      }
-    }
-  }
-
 
   for (const contract of hasBalanceOf) {
     await fetchRequiredPrices(contract)
@@ -343,9 +330,15 @@ export function filterTransfer($: Transfer) {
   if (graph.ignoredSymbols.has(normalizeAddress($.contractAddress))) return false
   if (graph.ignoredSymbols.has($.tokenSymbol || "ETH")) return false
 
-  if ($.contractAddress && !graph.allowedContracts.has(normalizeAddress($.contractAddress))) {
+  const contract = graph.allowedContracts.get(normalizeAddress($.contractAddress))
+
+  if ($.contractAddress && !contract) {
     return false
   }
 
+  if (contract) {
+    contract.present = true
+  }
+
   return true
-}
+} 

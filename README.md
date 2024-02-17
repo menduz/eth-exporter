@@ -8,8 +8,12 @@ blockNumber 17773460
 # etherscanApiKey AAAAAAAAAAAAAAAAAAAAAAAAAAAASD
 # (can also be specified as env var ETHERSCAN_API_KEY)
 
+# coingeckoApiKey CG-AAAAAAAAAAAAAAAAAAAAA
+# (can also be specified as env var COINGECKO_API_KEY)
+
 add 0xf6B6F07862A02C85628B3A9688beae07fEA9C863 poap.xyz 
 ```
+
 
 Then run the following command to extract the transactions to a CSV file
 
