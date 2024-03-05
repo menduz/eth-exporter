@@ -259,6 +259,7 @@ export function operationTypeBySelector(data: string) {
       return "Transfer" // erc20
     case data.startsWith("0x85f6d155"):
       return "Transfer" // ENS: Register
+    case data.startsWith("0xc9a48e6f"):
     case data.startsWith("0x1cff79cd"):
     case data.startsWith("0xf88bf15a"):
       return "Liquidity event" // "Balancer: Execute"
@@ -281,6 +282,8 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0x7a1eb1b9"):
     case data.startsWith("0x0f3b31b2"): // multiplexMultiHopSellTokenForToken(address[] tokens,tuple[] calls,uint256 sellAmount,uint256 minBuyAmount) ***
     case data.startsWith("0x7c025200"):
+    case data.startsWith("0xe9383a68"):
+    case data.startsWith("0x3593564c"):
     case data.startsWith("0xa578efaf"):
     case data.startsWith("0x3598d8ab"): // sellEthForTokenToUniswapV3
     case data.startsWith("0xd9627aa4"):
@@ -298,6 +301,7 @@ export function operationTypeBySelector(data: string) {
       return "Crowdsale"
     case data.startsWith("0xb02f0b73"):
       return "Transfer" // Unstake
+    case data.startsWith("0xc8a397a8"):
     case data.startsWith("0xd35ab3f1"):
       return "Swap" // Convert DG to new DG
     case data.startsWith("0x6a761202"):
