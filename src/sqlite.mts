@@ -1,6 +1,5 @@
-import { doubleEntryFromGraph, DoubleEntryResult } from "./double-entry.mjs"
-import { filterTransfer, graph, Graph, normalizeAddress, operationType, Options } from "./graph.mjs"
-import { writeFile } from "fs/promises"
+import { doubleEntryFromGraph } from "./double-entry.mjs"
+import { Graph, normalizeAddress, operationType } from "./graph.mjs"
 import sqlite from 'sqlite3'
 const { Database } = sqlite
 import { future } from 'fp-future'
@@ -8,7 +7,6 @@ import sql, { bulk, empty, join, raw, Sql } from "sql-template-tag";
 import { log } from "./log.mjs"
 import { rmSync } from "fs"
 import ethConnect from 'eth-connect'
-import { txValue } from "./draw.mjs"
 const { BigNumber } = ethConnect
 
 export async function dumpSqlite(graph: Graph) {

@@ -55,6 +55,7 @@ export const graph = {
   endBlock: new BigNumber("0"),
   latestTimestamp: new Date(1970, 0, 0),
   prices: new Map<string /* contract */, { prices: [[number, number]] }>,
+  selectors: new Map<string, string>(),
   options: {
     cacheDir: ".cache",
     etherscanApiKey: process.env.ETHERSCAN_API_KEY || null,
@@ -168,13 +169,16 @@ async function fetchRequiredPrices(contract: string) {
     return
   }
 
-  log(`Fetching prices of ${token.contract}\t${token.name}\t${token.coingeckoId}`)
   await fetchSymbolMarketData(token.coingeckoId, contract)
 }
 
 async function fetchSymbolMarketData(symbol: string, contract: string) {
   const result = await fetchWithCache(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(symbol)}/market_chart/range?vs_currency=usd&to=${(graph.latestTimestamp.getTime() / 1000) | 0}&from=0`, a => a)
   graph.prices.set(contract, result)
+  if (!result.prices.length) {
+    console.log(`! Error fetching prices of ${symbol} (${contract}), empty result`)
+    console.dir(result)
+  }
 }
 
 export async function processGraph() {
@@ -228,14 +232,18 @@ export async function processGraph() {
     hasBalanceOf.add(contract)
   })
 
-  for (const contract of hasBalanceOf) {
-    await fetchRequiredPrices(contract)
-  }
-
+  console.time("> Fetching historical prices")
   {
+    for (const contract of hasBalanceOf) {
+      await fetchRequiredPrices(contract)
+    }
+
     await fetchSymbolMarketData('bitcoin', 'btc')
     await fetchSymbolMarketData('ethereum', 'eth')
   }
+  console.timeEnd("> Fetching historical prices")
+
+  printUnknownSelectors()
 
   // for (let [tx] of graph.transactions) {
   //   await getEventsWithCache(tx)
@@ -250,7 +258,14 @@ export function getSender(graph: Graph, hash: string) {
   return "unknown"
 }
 
-export function operationTypeBySelector(data: string) {
+const unknownSelectors: Record<string, Set<string>> = {}
+
+export function operationTypeBySelector(data: string, tx: string) {
+  const selector = data.substring(0, 10).toLowerCase()
+
+  const store_value = graph.selectors.get(selector)
+  if (store_value !== null && store_value !== undefined)
+    return store_value;
 
   switch (true) {
     case data == "0x":
@@ -307,17 +322,41 @@ export function operationTypeBySelector(data: string) {
     case data.startsWith("0x6a761202"):
       return "Gnosis: Exec"
     case data.startsWith("0x13d98d13"): // Tornado: Deposit
-    case data.startsWith("0x74bd0ace"): // sellNXMTokens(uint256 _amount) (NXM pool)
     case data.startsWith("0x439370b1"): // depositEth()
       return "Transfer"
   }
 
+  unknownSelectors[selector] = unknownSelectors[selector] ?? new Set()
+  unknownSelectors[selector].add(tx)
+
   return data.substring(0, 10)
+}
+
+export function printUnknownSelectors() {
+
+  for (let [_, txlist] of graph.transactions) {
+    for (let tx of txlist) {
+      if (!filterTransfer(tx)) continue
+
+      operationType(graph, tx.hash)
+    }
+  }
+
+  const entries = Object.entries(unknownSelectors).sort(([_, a], [__, b]) => a.size < b.size ? 1 : -1)
+
+  function first([a]: any) {
+    return a
+  }
+
+  if (entries.length) {
+    console.log('! Unknown selectors')
+    entries.forEach(([selector, set]) => console.log(`  ${selector}: ${set.size} occurences, eg: ${first(set)}`))
+  }
 }
 
 export function operationType(graph: Graph, tx: string) {
   const data = graph.txData.get(tx)?.input.toLowerCase() || ""
-  return operationTypeBySelector(data)
+  return operationTypeBySelector(data, tx)
 }
 
 export async function dumpGraph(filename: string) {

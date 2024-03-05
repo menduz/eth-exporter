@@ -33,6 +33,9 @@ async function readContent(content: string, currentFile: string) {
       case "coingeckoApiKey":
         graph.options.coingeckoApiKey = args[0]
         continue
+      case "selector":
+        graph.selectors.set(args[0], args[1])
+        continue
       case "ignoreSymbols":
         args.forEach($ => graph.ignoredSymbols.add(normalizeAddress($.trim())))
         continue
