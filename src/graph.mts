@@ -455,8 +455,9 @@ export function filterTransfer($: Transfer) {
   if (graph.ignoredSymbols.has($.tokenSymbol || 'ETH')) return false
 
   const contract = graph.allowedContracts.get(normalizeAddress($.contractAddress))
+  const added = graph.accounts.has(normalizeAddress($.contractAddress))
 
-  if ($.contractAddress && !contract) {
+  if ($.contractAddress && !contract && !added) {
     return false
   }
 
