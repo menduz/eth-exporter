@@ -67,7 +67,7 @@ export function doubleEntryFromGraph(graph: Graph) {
       }
     }
 
-    if (!lineItem.changes.some($ => $.originalTx == transfer)) {
+    if (!lineItem.changes.some($ => JSON.stringify($.originalTx) == JSON.stringify(transfer))) {
       lineItem.changes.push({
         tx: transfer.hash,
         accountDebit: accountFrom,
@@ -103,7 +103,6 @@ export function doubleEntryFromGraph(graph: Graph) {
     .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? 1 : -1))
     .filter(filterTransfer)
   txs.forEach(addLineItem)
-
   // include fees as line item
   if (graph.options.includeFees) {
     for (const [hash, lineItem] of lineItems) {
