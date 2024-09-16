@@ -43,7 +43,7 @@ export async function fetchWithAttempts(url: string) {
     if (req.ok) {
       if (req.headers.get('content-type')?.includes('json')) {
         const j: any = await req.json()
-        if (j.result !== 'Max rate limit reached') {
+        if (j.result !== 'Max rate limit reached' && !`${j.result}`.includes('Max calls per sec rate limit reached')) {
           return j
         }
         console.dir(j)
