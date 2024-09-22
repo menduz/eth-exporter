@@ -7,6 +7,7 @@ import { log } from "./log.mjs"
 import arg from "arg"
 import path from "path"
 import { dumpSqlite } from "./sqlite.mjs"
+import { dumpHledger } from "./hledger.mjs"
 
 async function readInput(file: string) {
   log(`> Reading input file ${path.relative(process.cwd(), file)}`)
@@ -108,6 +109,10 @@ async function main() {
       await dumpCsv(graph)
       break
     }
+    case "hledger": {
+      await dumpHledger(graph)
+      break
+    }
     case "sqlite": {
       await dumpSqlite(graph)
       break
@@ -121,7 +126,7 @@ async function main() {
       break
     }
     default: {
-      throw new Error("invalid output --format or not specified")
+      throw new Error(`invalid output --format (${args['--format']}) or not specified`)
     }
   }
 }

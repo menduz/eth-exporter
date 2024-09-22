@@ -1,0 +1,393 @@
+decimal-mark .
+commodity 1000.00000 ETH
+commodity 1000.00000 BTC
+account equity:conversion  ; type: V
+; allowedContracts
+
+; symbol:1INCH, contract:0x111111111117dc0aa78b770fa6a738034120c302
+account equity:trading:1INCH-1inch    ; type:E
+commodity 1000.00000 1INCH
+
+; symbol:ASUSD, contract:0x625ae63000f46200499120b906716420bd059240
+account equity:trading:ASUSD-aave-susd-v1    ; type:E
+commodity 1000.00000 ASUSD
+
+; symbol:AWETH, contract:0x030ba81f1c18d280636f32af80b9aad02cf0854e
+account equity:trading:AWETH-aave-weth    ; type:E
+commodity 1000.00000 AWETH
+
+; symbol:ACH, contract:0xed04915c23f00a313a544955524eb7dbd823143d
+account equity:trading:ACH-alchemy-pay    ; type:E
+commodity 1000.00000 ACH
+
+; symbol:WALLET, contract:0x88800092ff476844f74dc2fc427974bbee2794ae
+account equity:trading:WALLET-ambire-wallet    ; type:E
+commodity 1000.00000 WALLET
+
+; symbol:REP, contract:0x221657776846890989a759ba2973e427dff5c9bb
+account equity:trading:REP-augur    ; type:E
+commodity 1000.00000 REP
+
+; symbol:BAL, contract:0xba100000625a3754423978a60c9317c58a424e3d
+account equity:trading:BAL-balancer    ; type:E
+commodity 1000.00000 BAL
+
+; symbol:BANK, contract:0x2d94aa3e47d9d5024503ca8491fce9a2fb4da198
+account equity:trading:BANK-bankless-dao    ; type:E
+commodity 1000.00000 BANK
+
+; symbol:PET, contract:0xb870679a7fa65b924026f496de7f27c1dd0e5c5f
+account equity:trading:PET-battle-pets    ; type:E
+commodity 1000.00000 PET
+
+; symbol:BNB, contract:0xb8c77482e45f1f44de1745f52c74426c631bdd52
+account equity:trading:BNB-binancecoin    ; type:E
+commodity 1000.00000 BNB
+
+; symbol:BUSD, contract:0x4fabb145d64652a948d72533023f6e7a623c7c53
+account equity:trading:BUSD-binance-usd    ; type:E
+commodity 1000.00000 BUSD
+
+; symbol:BTB, contract:0x06e0feb0d74106c7ada8497754074d222ec6bcdf
+account equity:trading:BTB-bitball    ; type:E
+commodity 1000.00000 BTB
+
+; symbol:CAT, contract:0x1234567461d3f8db7496581774bd869c83d51c93
+account equity:trading:CAT-bitclave    ; type:E
+commodity 1000.00000 CAT
+
+; symbol:BRIGHT, contract:0x5dd57da40e6866c9fcc34f4b6ddc89f1ba740dfe
+account equity:trading:BRIGHT-bright-token    ; type:E
+commodity 1000.00000 BRIGHT
+
+; symbol:FLIP, contract:0x826180541412d574cf1336d22c0c0a287822678a
+account equity:trading:FLIP-chainflip    ; type:E
+commodity 1000.00000 FLIP
+
+; symbol:COMP, contract:0xc00e94cb662c3520282e6f5717214004a7f26888
+account equity:trading:COMP-compound-governance-token    ; type:E
+commodity 1000.00000 COMP
+
+; symbol:CUNI, contract:0x35a18000230da775cac24873d00ff85bccded550
+account equity:trading:CUNI-compound-uniswap    ; type:E
+commodity 1000.00000 CUNI
+
+; symbol:CVP, contract:0x38e4adb44ef08f22f5b5b76a8f0c2d0dcbe7dca1
+account equity:trading:CVP-concentrated-voting-power    ; type:E
+commodity 1000.00000 CVP
+
+; symbol:PEOPLE, contract:0x7a58c0be72be218b41c608b7fe7c5bb630736c71
+account equity:trading:PEOPLE-constitutiondao    ; type:E
+commodity 1000.00000 PEOPLE
+
+; symbol:CRV, contract:0xd533a949740bb3306d119cc777fa900ba034cd52
+account equity:trading:CRV-curve-dao-token    ; type:E
+commodity 1000.00000 CRV
+
+; symbol:DAI, contract:0x6b175474e89094c44da98b954eedeac495271d0f
+account equity:trading:DAI-dai    ; type:E
+commodity 1000.00000 DAI
+
+; symbol:HAUS, contract:0xf2051511b9b121394fa75b8f7d4e7424337af687
+account equity:trading:HAUS-daohaus    ; type:E
+commodity 1000.00000 HAUS
+
+; symbol:DG, contract:0x4b520c812e8430659fc9f12f6d0c39026c83588d
+account equity:trading:DG-decentral-games    ; type:E
+commodity 1000.00000 DG
+
+; symbol:DG, contract:0xee06a81a695750e71a662b51066f2c74cf4478a0
+account equity:trading:DG-decentral-games-old    ; type:E
+
+; symbol:DGX, contract:0x4f3afec4e5a3f2a6a1a411def7d7dfe50ee057bf
+account equity:trading:DGX-digix-gold    ; type:E
+commodity 1000.00000 DGX
+
+; symbol:DODO, contract:0x43dfc4159d86f3a37a5a4b3d4580b888ad7d4ddd
+account equity:trading:DODO-dodo    ; type:E
+commodity 1000.00000 DODO
+
+; symbol:COLLAR, contract:0x9783b81438c24848f85848f8df31845097341771
+account equity:trading:COLLAR-dog-collar    ; type:E
+commodity 1000.00000 COLLAR
+
+; symbol:DRGN, contract:0x419c4db4b9e25d6db2ad9691ccb832c8d9fda05e
+account equity:trading:DRGN-dragonchain    ; type:E
+commodity 1000.00000 DRGN
+
+; symbol:ENS, contract:0xc18360217d8f7ab5e7c516566761ea12ce7f9d72
+account equity:trading:ENS-ethereum-name-service    ; type:E
+commodity 1000.00000 ENS
+
+; symbol:DIP, contract:0xc719d010b63e5bbf2c0551872cd5316ed26acd83
+account equity:trading:DIP-etherisc    ; type:E
+commodity 1000.00000 DIP
+
+; symbol:LEND, contract:0x80fb784b7ed66730e8b1dbd9820afd29931aab03
+account equity:trading:LEND-ethlend    ; type:E
+commodity 1000.00000 LEND
+
+; symbol:FNT, contract:0xdc5864ede28bd4405aa04d93e05a0531797d9d59
+account equity:trading:FNT-falcon-token    ; type:E
+commodity 1000.00000 FNT
+
+; symbol:FASTAI, contract:0xf986408a1788ceb3bb4b4be4aa96a43914168554
+account equity:trading:FASTAI-fast-and-ai    ; type:E
+commodity 1000.00000 FASTAI
+
+; symbol:BANK, contract:0x24a6a37576377f63f194caa5f518a60f45b42921
+account equity:trading:BANK-float-protocol    ; type:E
+
+; symbol:FOAM, contract:0x4946fcea7c692606e8908002e55a582af44ac121
+account equity:trading:FOAM-foam-protocol    ; type:E
+commodity 1000.00000 FOAM
+
+; symbol:FREE, contract:0x2f141ce366a2462f02cea3d12cf93e4dca49e4fd
+account equity:trading:FREE-freedom-coin    ; type:E
+commodity 1000.00000 FREE
+
+; symbol:FWB, contract:0x35bd01fc9d6d5d81ca9e055db88dc49aa2c699a8
+account equity:trading:FWB-friends-with-benefits-pro    ; type:E
+commodity 1000.00000 FWB
+
+; symbol:FRONT, contract:0xf8c3527cc04340b208c854e985240c02f7b7793f
+account equity:trading:FRONT-frontier-token    ; type:E
+commodity 1000.00000 FRONT
+
+; symbol:FUN, contract:0x419d0d8bdd9af5e606ae2232ed285aff190e711b
+account equity:trading:FUN-funfair    ; type:E
+commodity 1000.00000 FUN
+
+; symbol:GATE, contract:0x9d7630adf7ab0b0cb00af747db76864df0ec82e4
+account equity:trading:GATE-gatenet    ; type:E
+commodity 1000.00000 GATE
+
+; symbol:GEL, contract:0x15b7c0c907e4c6b9adaaaabc300c08991d6cea05
+account equity:trading:GEL-gelato    ; type:E
+commodity 1000.00000 GEL
+
+; symbol:GUSD, contract:0x056fd409e1d7a124bd7017459dfea2f387b6d5cd
+account equity:trading:GUSD-gemini-dollar    ; type:E
+commodity 1000.00000 GUSD
+
+; symbol:JAM, contract:0x23894dc9da6c94ecb439911caf7d337746575a72
+account equity:trading:JAM-geojam    ; type:E
+commodity 1000.00000 JAM
+
+; symbol:GTC, contract:0xde30da39c46104798bb5aa3fe8b9e0e1f348163f
+account equity:trading:GTC-gitcoin    ; type:E
+commodity 1000.00000 GTC
+
+; symbol:GNO, contract:0x6810e776880c02933d47db1b9fc05908e5386b96
+account equity:trading:GNO-gnosis    ; type:E
+commodity 1000.00000 GNO
+
+; symbol:GODS, contract:0xccc8cb5229b0ac8069c51fd58367fd1e622afd97
+account equity:trading:GODS-gods-unchained    ; type:E
+commodity 1000.00000 GODS
+
+; symbol:GLM, contract:0x7dd9c5cba05e151c895fde1cf355c9a1d5da6429
+account equity:trading:GLM-golem    ; type:E
+commodity 1000.00000 GLM
+
+; symbol:GSE, contract:0xe530441f4f73bdb6dc2fa5af7c3fc5fd551ec838
+account equity:trading:GSE-gsenetwork    ; type:E
+commodity 1000.00000 GSE
+
+; symbol:GOG, contract:0x9ab7bb7fdc60f4357ecfef43986818a2a3569c62
+account equity:trading:GOG-guild-of-guardians    ; type:E
+commodity 1000.00000 GOG
+
+; symbol:SNX, contract:0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f
+account equity:trading:SNX-havven    ; type:E
+commodity 1000.00000 SNX
+
+; symbol:HEX, contract:0x2b591e99afe9f32eaa6214f7b7629768c40eeb39
+account equity:trading:HEX-hex    ; type:E
+commodity 1000.00000 HEX
+
+; symbol:HSF, contract:0xba6b0dbb2ba8daa8f5d6817946393aef8d3a4487
+account equity:trading:HSF-hillstone    ; type:E
+commodity 1000.00000 HSF
+
+; symbol:IMX, contract:0xf57e7e7c23978c3caec3c3548e3d615c346e79ff
+account equity:trading:IMX-immutable-x    ; type:E
+commodity 1000.00000 IMX
+
+; symbol:LPT, contract:0x58b6a8a3302369daec383334672404ee733ab239
+account equity:trading:LPT-livepeer    ; type:E
+commodity 1000.00000 LPT
+
+; symbol:LOON, contract:0x7c5d5100b339fe7d995a893af6cb496b9474373c
+account equity:trading:LOON-loon-network    ; type:E
+commodity 1000.00000 LOON
+
+; symbol:SCURVE, contract:0xc25a3a3b969415c80451098fa907ec722572917f
+account equity:trading:SCURVE-lp-scurve    ; type:E
+commodity 1000.00000 SCURVE
+
+; symbol:MKR, contract:0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2
+account equity:trading:MKR-maker    ; type:E
+commodity 1000.00000 MKR
+
+; symbol:MEM, contract:0x42dbbd5ae373fea2fc320f62d44c058522bb3758
+account equity:trading:MEM-memecoin    ; type:E
+commodity 1000.00000 MEM
+
+; symbol:MTV, contract:0x6226e00bcac68b0fe55583b90a1d727c14fab77f
+account equity:trading:MTV-multivac    ; type:E
+commodity 1000.00000 MTV
+
+; symbol:NU, contract:0x4fe83213d56308330ec302a8bd641f1d0113a4cc
+account equity:trading:NU-nucypher    ; type:E
+commodity 1000.00000 NU
+
+; symbol:SUSD, contract:0x57ab1ec28d129707052df4df418d58a2d46d5f51
+account equity:trading:SUSD-nusd    ; type:E
+commodity 1000.00000 SUSD
+
+; symbol:NXM, contract:0xd7c49cee7e9188cca6ad8ff264c1da2e69d4cf3b
+account equity:trading:NXM-nxm    ; type:E
+commodity 1000.00000 NXM
+
+; symbol:OCN, contract:0x4092678e4e78230f46a1534c0fbc8fa39780892b
+account equity:trading:OCN-odyssey    ; type:E
+commodity 1000.00000 OCN
+
+; symbol:OMG, contract:0xd26114cd6ee289accf82350c8d8487fedb8a0c07
+account equity:trading:OMG-omisego    ; type:E
+commodity 1000.00000 OMG
+
+; symbol:PAINT, contract:0x4c6ec08cf3fc987c6c4beb03184d335a2dfc4042
+account equity:trading:PAINT-paint    ; type:E
+commodity 1000.00000 PAINT
+
+; symbol:PHONON, contract:0x758b4684be769e92eefea93f60dda0181ea303ec
+account equity:trading:PHONON-phonon-dao    ; type:E
+commodity 1000.00000 PHONON
+
+; symbol:PICKLE, contract:0x429881672b9ae42b8eba0e26cd9c73711b891ca5
+account equity:trading:PICKLE-pickle-finance    ; type:E
+commodity 1000.00000 PICKLE
+
+; symbol:PLU, contract:0xd8912c10681d8b21fd3742244f44658dba12264e
+account equity:trading:PLU-pluton    ; type:E
+commodity 1000.00000 PLU
+
+; symbol:POOL, contract:0x0cec1a9154ff802e7934fc916ed7ca50bde6844e
+account equity:trading:POOL-pooltogether    ; type:E
+commodity 1000.00000 POOL
+
+; symbol:POP, contract:0xd0cd466b34a24fcb2f87676278af2005ca8a78c4
+account equity:trading:POP-popcorn    ; type:E
+commodity 1000.00000 POP
+
+; symbol:RDN, contract:0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6
+account equity:trading:RDN-raiden-network    ; type:E
+commodity 1000.00000 RDN
+
+; symbol:RARI, contract:0xfca59cd816ab1ead66534d82bc21e7515ce441cf
+account equity:trading:RARI-rarible    ; type:E
+commodity 1000.00000 RARI
+
+; symbol:GRG, contract:0x4fbb350052bca5417566f188eb2ebce5b19bc964
+account equity:trading:GRG-rigoblock    ; type:E
+commodity 1000.00000 GRG
+
+; symbol:RPL, contract:0xd33526068d116ce69f19a9ee46f0bd304f21a51f
+account equity:trading:RPL-rocket-pool    ; type:E
+commodity 1000.00000 RPL
+
+; symbol:RETH, contract:0xae78736cd615f374d3085123a210448e74fc6393
+account equity:trading:RETH-rocket-pool-eth    ; type:E
+commodity 1000.00000 RETH
+
+; symbol:SAI, contract:0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359
+account equity:trading:SAI-sai    ; type:E
+commodity 1000.00000 SAI
+
+; symbol:SAITABIT, contract:0x927402ab67c0cda3c187e9dfe34554ac581441f2
+account equity:trading:SAITABIT-saitabit    ; type:E
+commodity 1000.00000 SAITABIT
+
+; symbol:SETH, contract:0x5e74c9036fb86bd7ecdcb084a0673efc32ea31cb
+account equity:trading:SETH-seth    ; type:E
+commodity 1000.00000 SETH
+
+; symbol:SHEESHA, contract:0x232fb065d9d24c34708eedbf03724f2e95abe768
+account equity:trading:SHEESHA-sheesha-finance-erc20    ; type:E
+commodity 1000.00000 SHEESHA
+
+; symbol:SDT, contract:0x73968b9a57c6e53d41345fd57a6e6ae27d6cdb2f
+account equity:trading:SDT-stake-dao    ; type:E
+commodity 1000.00000 SDT
+
+; symbol:STETH, contract:0xae7ab96520de3a18e5e111b5eaab095312d7fe84
+account equity:trading:STETH-staked-ether    ; type:E
+commodity 1000.00000 STETH
+
+; symbol:XDATA, contract:0x0cf0ee63788a0849fe5297f3407f701e122cc023
+account equity:trading:XDATA-streamr-xdata    ; type:E
+commodity 1000.00000 XDATA
+
+; symbol:STRP, contract:0x97872eafd79940c7b24f7bcc1eadb1457347adc9
+account equity:trading:STRP-strips-finance    ; type:E
+commodity 1000.00000 STRP
+
+; symbol:TKAI, contract:0x7c5b267ed81009aa7374b5ca7e5137da47045ba8
+account equity:trading:TKAI-taikai    ; type:E
+commodity 1000.00000 TKAI
+
+; symbol:USDT, contract:0xdac17f958d2ee523a2206206994597c13d831ec7
+account equity:trading:USDT-tether    ; type:E
+commodity 1000.00000 USDT
+
+; symbol:GRT, contract:0xc944e90c64b2c07662a292be6244bdf05cda44a7
+account equity:trading:GRT-the-graph    ; type:E
+commodity 1000.00000 GRT
+
+; symbol:TORN, contract:0x77777feddddffc19ff86db637967013e6c6a116c
+account equity:trading:TORN-tornado-cash    ; type:E
+commodity 1000.00000 TORN
+
+; symbol:TUSD, contract:0x0000000000085d4780b73119b644ae5ecd22b376
+account equity:trading:TUSD-true-usd    ; type:E
+commodity 1000.00000 TUSD
+
+; symbol:UNI, contract:0x1f9840a85d5af5bf1d1762f925bdaddc4201f984
+account equity:trading:UNI-uniswap    ; type:E
+commodity 1000.00000 UNI
+
+; symbol:USDC, contract:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+account equity:trading:USDC-usd-coin    ; type:E
+commodity 1000.00000 USDC
+
+; symbol:WETH, contract:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+account equity:trading:WETH-weth    ; type:E
+commodity 1000.00000 WETH
+
+; symbol:WRC, contract:0x72adadb447784dd7ab1f472467750fc485e4cb2d
+account equity:trading:WRC-worldcore    ; type:E
+commodity 1000.00000 WRC
+
+; symbol:WSTETH, contract:0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0
+account equity:trading:WSTETH-wrapped-steth    ; type:E
+commodity 1000.00000 WSTETH
+
+; symbol:STAKE, contract:0x0ae055097c6d159879521c384f1d2123d1f195e6
+account equity:trading:STAKE-xdai-stake    ; type:E
+commodity 1000.00000 STAKE
+
+; symbol:XDEFI, contract:0x72b886d09c117654ab7da13a14d603001de0b777
+account equity:trading:XDEFI-xdefi    ; type:E
+commodity 1000.00000 XDEFI
+
+; symbol:YFI, contract:0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e
+account equity:trading:YFI-yearn-finance    ; type:E
+commodity 1000.00000 YFI
+
+; symbol:ZENIQ, contract:0x5b52bfb8062ce664d74bbcd4cd6dc7df53fd7233
+account equity:trading:ZENIQ-zeniq    ; type:E
+commodity 1000.00000 ZENIQ
+commodity 1000.00000 ETH
+commodity 1000.00000 UNI-V1

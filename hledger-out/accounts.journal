@@ -1,0 +1,27 @@
+
+; accounts
+account assets:poap.xyz
+account assets:worthalter.eth
+account assets:patricioworthalter.eth
+account CoWProtocol    ; type:E
+account old    ; type:E
+account expense:fees
+account DEX-1inch    ; type:E
+account Zora    ; type:E
+account Nouns    ; type:E
+account Wizzard    ; type:E
+account Opensea    ; type:E
+alias 0xf6b6f07862a02c85628b3a9688beae07fea9c863 = assets:poap.xyz
+alias 0xeb3b9f824c8551a58a427aeaaa1044866bb5e28e = assets:worthalter.eth
+alias 0x57757e3d981446d585af0d9ae4d7df6d64647806 = assets:patricioworthalter.eth
+alias 0x9008d19f58aabd9ed0d60971565aa8510560ab41 = CoWProtocol
+alias 0x4f30e682d0541eac91748bd38a648d759261b8f3 = old
+alias 0x0000000000000000000000000000000000000000 = expense:fees
+alias 0xe069cb01d06ba617bcdf789bf2ff0d5e5ca20c71 = DEX-1inch
+alias 0xe5bfab544eca83849c53464f85b7164375bdaac1 = Zora
+alias 0x830bd73e4184cef73443c15111a1df14e495c706 = Nouns
+alias 0x3a91eaacd2d5d5b7e102e17ca8bd467b79139ed5 = Nouns
+alias 0x55e0f7a3bb39a28bd7bcc458e04b3cf00ad3219e = Nouns
+alias 0xa2f1c683c8e2dedfc02929f4e6f5c01d078d6274 = Nouns
+alias 0x418cbb82f7472b321c2c5ccf76b8d9b6df47daba = Wizzard
+alias 0x00000000000000adc04c56bf30ac9d3c0aaf14dc = Opensea

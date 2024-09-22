@@ -47,8 +47,9 @@ export async function fetchWithAttempts(url: string) {
           return j
         }
         console.dir(j)
+      } else {
+        return req.text()
       }
-      return req.text()
     } else {
       try {
         console.log(await req.text())

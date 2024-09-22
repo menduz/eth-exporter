@@ -1,6 +1,6 @@
-import ethConnect from "eth-connect"
-import { txValue } from "./draw.mjs"
-import { Account, filterTransfer, getAccountFromAddress, Graph, normalizeAddress, operationType, Options, Transfer } from "./graph.mjs"
+import ethConnect from 'eth-connect'
+import { txValue } from './draw.mjs'
+import { Account, filterTransfer, getAccountFromAddress, Graph, normalizeAddress, Transfer } from './graph.mjs'
 
 export type LineItemChange = {
   tx: string
@@ -10,6 +10,7 @@ export type LineItemChange = {
   amount: ethConnect.BigNumber
   originalTx: Transfer
   contractAddress: null | string
+  isFee: boolean
 }
 
 export type LineItem = {
@@ -45,6 +46,8 @@ export function doubleEntryFromGraph(graph: Graph) {
     const accountFrom = getAccountFromAddress(transfer.from)
     const accountTo = getAccountFromAddress(transfer.to)
 
+    if (accountFrom.hidden || accountTo.hidden) return
+
     if (accountFrom.label === accountFrom.address) unknownAccounts.add(accountFrom.address)
     if (accountTo.label === accountTo.address) unknownAccounts.add(accountTo.address)
 
@@ -52,7 +55,7 @@ export function doubleEntryFromGraph(graph: Graph) {
       lineItems.set(transfer.hash, {
         changes: [],
         date: new Date(parseInt(transfer.timeStamp) * 1000),
-        fees: new ethConnect.BigNumber(0),
+        fees: new ethConnect.BigNumber(0)
       })
     }
 
@@ -61,48 +64,50 @@ export function doubleEntryFromGraph(graph: Graph) {
     const data = graph.receipts.get(transfer.hash)
 
     if (data) {
-      const fees = new ethConnect.BigNumber(data.gasUsed).multipliedBy(ethConnect.toDecimal((data as any).effectiveGasPrice ?? '0x0'))
+      const fees = new ethConnect.BigNumber(data.gasUsed).multipliedBy(
+        ethConnect.toDecimal((data as any).effectiveGasPrice ?? '0x0')
+      )
       if (fees.gt(lineItem.fees)) {
         lineItem.fees = fees
       }
     }
 
-    if (!lineItem.changes.some($ => JSON.stringify($.originalTx) == JSON.stringify(transfer))) {
+    if (!lineItem.changes.some(($) => JSON.stringify($.originalTx) == JSON.stringify(transfer))) {
       lineItem.changes.push({
         tx: transfer.hash,
         accountDebit: accountFrom,
         accountCredit: accountTo,
-        symbol: transfer.tokenSymbol || "ETH",
+        symbol: transfer.tokenSymbol || 'ETH',
         amount: txValue(transfer),
         contractAddress: normalizeAddress(transfer.contractAddress),
         originalTx: transfer,
+        isFee: false
       })
     }
 
     if (transfer.contractAddress) {
       if (
         !graph.ignoredSymbols.has(normalizeAddress(transfer.contractAddress)) &&
-        !graph.ignoredSymbols.has(transfer.tokenSymbol || "????????")
+        !graph.ignoredSymbols.has(transfer.tokenSymbol || '????????')
       ) {
         const prev = contractToToken.get(normalizeAddress(transfer.contractAddress))
-        const symbol = transfer.tokenSymbol || "????"
+        const symbol = transfer.tokenSymbol || '????'
         if (prev && prev !== symbol) {
           console.dir({ prev, symbol, transfer })
-          throw new Error("OOPS")
+          throw new Error('OOPS')
         }
         contractToToken.set(normalizeAddress(transfer.contractAddress), symbol)
       }
     }
   }
 
-
   // add all line items
   const alltx: Transfer[] = []
   Array.from(graph.transactions.values()).forEach((txlist) => alltx.push(...txlist))
-  const txs = alltx
-    .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? 1 : -1))
-    .filter(filterTransfer)
+  const txs = alltx.sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? 1 : -1)).filter(filterTransfer)
+
   txs.forEach(addLineItem)
+
   // include fees as line item
   if (graph.options.includeFees) {
     for (const [hash, lineItem] of lineItems) {
@@ -117,10 +122,11 @@ export function doubleEntryFromGraph(graph: Graph) {
             tx: hash,
             accountDebit: accountFrom,
             accountCredit: feesAccount,
-            symbol: "ETH",
+            symbol: 'ETH',
             contractAddress: null,
             amount: lineItem.fees.shiftedBy(-18),
             originalTx,
+            isFee: true
           })
         }
       }
@@ -131,6 +137,6 @@ export function doubleEntryFromGraph(graph: Graph) {
     lineItems,
     contractToToken,
     unknownAccounts,
-    txs,
+    txs
   }
 }

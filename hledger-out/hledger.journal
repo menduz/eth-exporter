@@ -1,0 +1,5 @@
+D $1,000.00
+include parameters.journal
+include accounts.journal
+include movements.journal
+include prices.journal

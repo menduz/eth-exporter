@@ -270,13 +270,21 @@ export async function processGraph() {
   const allowed = symbols.filter((x) => 'ethereum' in x.platforms)
 
   allowed.forEach((x) => {
-    graph.allowedContracts.set(normalizeAddress(x.platforms.ethereum), {
+    const addr = normalizeAddress(x.platforms.ethereum)
+    const contractAccount = graph.accounts.get(addr)
+
+    graph.allowedContracts.set(addr, {
       contract: x.platforms.ethereum,
       name: x.name,
-      symbol: x.symbol.toUpperCase(),
+      symbol: contractAccount?.label || x.symbol.toUpperCase(),
       coingeckoId: x.id,
       present: false
     })
+
+    const acct = getAccountFromAddress(addr)
+    if (acct.label == addr) {
+      acct.label = `equity:trading:${x.symbol.toUpperCase()}-${x.id}`
+    }
   })
 
   console.time('> Fetching accounts transaction list')
@@ -321,8 +329,8 @@ export async function processGraph() {
       await fetchRequiredPrices(contract)
     }
 
-    await fetchSymbolMarketData('bitcoin', 'btc')
-    await fetchSymbolMarketData('ethereum', 'eth')
+    await fetchSymbolMarketData('bitcoin', 'BTC')
+    await fetchSymbolMarketData('ethereum', 'ETH')
   }
   console.timeEnd('> Fetching historical prices')
 
@@ -451,6 +459,7 @@ export function filterTransfer($: Transfer) {
   if (graph.options.startDate && date < graph.options.startDate) return false
   if (graph.options.endDate && date > graph.options.endDate) return false
 
+  if (graph.accounts.get(normalizeAddress($.from))?.hidden) return false
   if (graph.ignoredSymbols.has(normalizeAddress($.contractAddress))) return false
   if (graph.ignoredSymbols.has($.tokenSymbol || 'ETH')) return false
 
