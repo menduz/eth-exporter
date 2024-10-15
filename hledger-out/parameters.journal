@@ -1,12 +1,12 @@
 decimal-mark .
 commodity 1000.00000 ETH
 commodity 1000.00000 BTC
-account equity:conversion  ; type: V
+account equity:conversion    ; type:V
 ; allowedContracts
 
 ; symbol:1INCH, contract:0x111111111117dc0aa78b770fa6a738034120c302
 account equity:trading:1INCH-1inch    ; type:E
-commodity 1000.00000 1INCH
+commodity 1000.00000 "1INCH"
 
 ; symbol:ASUSD, contract:0x625ae63000f46200499120b906716420bd059240
 account equity:trading:ASUSD-aave-susd-v1    ; type:E
@@ -363,7 +363,7 @@ account equity:trading:USDC-usd-coin    ; type:E
 commodity 1000.00000 USDC
 
 ; symbol:WETH, contract:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
-account equity:trading:WETH-weth    ; type:E
+account liabilities:WETH    ; type:E
 commodity 1000.00000 WETH
 
 ; symbol:WRC, contract:0x72adadb447784dd7ab1f472467750fc485e4cb2d
@@ -390,4 +390,4 @@ commodity 1000.00000 YFI
 account equity:trading:ZENIQ-zeniq    ; type:E
 commodity 1000.00000 ZENIQ
 commodity 1000.00000 ETH
-commodity 1000.00000 UNI-V1
+commodity 1000.00000 "UNI-V1"

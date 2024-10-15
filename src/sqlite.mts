@@ -163,7 +163,7 @@ export async function dumpSqlite(graph: Graph) {
         ($) => new Date($[0]),
         ($) => c?.symbol ?? key,
         ($) => (c ? normalizeAddress(c.contract) : null),
-        ($) => $[1]
+        ($) => $[1].toString()
       )
     )}`
         )

@@ -1,4 +1,4 @@
-import ethConnect from 'eth-connect'
+import ethConnect, { BigNumber } from 'eth-connect'
 import { txValue } from './draw.mjs'
 import { Account, filterTransfer, getAccountFromAddress, Graph, normalizeAddress, Transfer } from './graph.mjs'
 
@@ -17,6 +17,15 @@ export type LineItem = {
   date: Date
   changes: LineItemChange[]
   fees: ethConnect.BigNumber
+
+  /** Net changes of any account of the lineitem */
+  netChanges: Map<string, Map<string, ethConnect.BigNumber>>
+
+  /** Net changes of added accounts */
+  selfAccountNetChanges: Map<string, Map<string, ethConnect.BigNumber>>
+
+  /** whether the line item looks like a swap */
+  apparentSwap: boolean
 }
 
 export type TradeRecord = {
@@ -37,10 +46,37 @@ export type LineItemColumn = {
 
 export type DoubleEntryResult = ReturnType<typeof doubleEntryFromGraph>
 
+export function changeTracker(requiredAccounts: Set<Account>) {
+  const netChanges: Map<string, Map<string, ethConnect.BigNumber>> = new Map()
+
+  function delta(account: Account, symbol: string, amt: ethConnect.BigNumber) {
+    const a = normalizeAddress(account.address)
+
+    requiredAccounts.add(account)
+
+    if (!netChanges.has(a)) netChanges.set(a, new Map())
+
+    if (!netChanges.get(a)!.has(symbol)) netChanges.get(a)!.set(symbol, new ethConnect.BigNumber(0))
+    {
+      const curr = netChanges.get(a)!.get(symbol)!
+      netChanges.get(a)!.set(symbol, curr.plus(amt))
+    }
+    return a
+  }
+
+  return {
+    delta,
+    netChanges
+  }
+}
+
 export function doubleEntryFromGraph(graph: Graph) {
   const lineItems = new Map<string, LineItem>()
   const contractToToken = new Map<string, string>()
   const unknownAccounts = new Set<string>()
+  const foundCommodities = new Set<string>()
+
+  const requiredAccounts = new Set<Account>()
 
   function addLineItem(transfer: Transfer) {
     const accountFrom = getAccountFromAddress(transfer.from)
@@ -55,7 +91,10 @@ export function doubleEntryFromGraph(graph: Graph) {
       lineItems.set(transfer.hash, {
         changes: [],
         date: new Date(parseInt(transfer.timeStamp) * 1000),
-        fees: new ethConnect.BigNumber(0)
+        fees: new ethConnect.BigNumber(0),
+        netChanges: new Map(),
+        selfAccountNetChanges: new Map(),
+        apparentSwap: false
       })
     }
 
@@ -133,10 +172,84 @@ export function doubleEntryFromGraph(graph: Graph) {
     }
   }
 
+  Array.from(lineItems.entries()).map(([_tx, item]) => {
+    const txChanges = changeTracker(requiredAccounts)
+    const selfAccountChanges = changeTracker(requiredAccounts)
+
+    for (const $ of item.changes) {
+      if (!$.accountDebit.added && !$.accountCredit.added) continue
+
+      if ($.isFee) continue
+
+      const contract = $.contractAddress ? graph.allowedContracts.get(normalizeAddress($.contractAddress)) : null
+      const symbol = contract?.symbol || $.symbol
+
+      txChanges.delta($.accountDebit, symbol, $.amount.negated())
+      txChanges.delta($.accountCredit, symbol, $.amount)
+
+      if ($.accountCredit.added) selfAccountChanges.delta($.accountCredit, symbol, $.amount)
+      if ($.accountDebit.added) selfAccountChanges.delta($.accountDebit, symbol, $.amount.negated())
+
+      foundCommodities.add(symbol)
+    }
+
+    item.netChanges = txChanges.netChanges
+    item.selfAccountNetChanges = selfAccountChanges.netChanges
+
+    if (item.selfAccountNetChanges.size == 1) {
+      const [[_address, changes]] = item.selfAccountNetChanges
+
+      if (changes.size == 2) {
+        const [a, b] = changes
+        item.apparentSwap = a[1].isPositive() != b[1].isPositive()
+      }
+    }
+  })
+
+  function addressBySymbol(symbol: string) {
+    for (const [addr, c] of graph.allowedContracts) {
+      if (c.symbol == symbol && graph.prices.has(addr)) return addr
+    }
+    return 'null'
+  }
+
+  function latestPrice(symbol: string) {
+    const prices = graph.prices.get(symbol) ?? graph.prices.get(addressBySymbol(symbol))
+    if (prices?.prices) {
+      return prices.prices[prices.prices.length - 1][1]
+    }
+    return Number.NaN
+  }
+
+  const stablecoins = new Set(['DAI', 'USD', 'USDC', 'USDT'])
+
+  function priceAt(symbol: string, date: Date) {
+    if (stablecoins.has(symbol.toUpperCase())) return ethConnect.BigNumber(1)
+
+    const prices = graph.prices.get(symbol) ?? graph.prices.get(addressBySymbol(symbol))
+    if (prices?.prices) {
+      const dateNum = date.getTime()
+      const list = prices.prices.filter(([when]) => when <= dateNum)
+      if (!list.length) {
+	console.dir({ ...prices, dateNum, symbol })
+	return Number.NaN
+      }
+      return list[list.length - 1][1]
+    }
+
+    return Number.NaN
+  }
+
   return {
     lineItems,
     contractToToken,
     unknownAccounts,
-    txs
+    foundCommodities,
+    // set of accounts appearing in movements
+    requiredAccounts,
+    txs,
+    priceAt,
+    latestPrice,
+    addressBySymbol
   }
 }

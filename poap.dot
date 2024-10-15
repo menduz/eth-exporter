@@ -9,10 +9,10 @@ labeljust="l";
 	add0xeb3b9f824c8551a58a427aeaaa1044866bb5e28e [href="https://etherscan.io/address/0xeb3b9f824c8551a58a427aeaaa1044866bb5e28e" style="bold" shape="box3d" label=<assets:worthalter.eth<br/><br/><font color="blue">0xeb3b...e28e</font>>]
 	add0x57757e3d981446d585af0d9ae4d7df6d64647806 [href="https://etherscan.io/address/0x57757e3d981446d585af0d9ae4d7df6d64647806" style="bold" shape="box3d" label=<assets:patricioworthalter.eth<br/><br/><font color="blue">0x5775...7806</font>>]
 	add0x9008d19f58aabd9ed0d60971565aa8510560ab41 [href="https://etherscan.io/address/0x9008D19f58AAbD9eD0D60971565AA8510560ab41"  label=<CoWProtocol<br/><br/><font color="blue">0x9008...ab41</font>>]
-	add0x830bd73e4184cef73443c15111a1df14e495c706 [href="https://etherscan.io/address/0x830bd73e4184cef73443c15111a1df14e495c706"  label=<Nouns<br/><br/><font color="blue">0x830b...c706</font>>]
-	add0x00000000000000adc04c56bf30ac9d3c0aaf14dc [href="https://etherscan.io/address/0x00000000000000adc04c56bf30ac9d3c0aaf14dc"  label=<Opensea<br/><br/><font color="blue">0x0000...14dc</font>>]
+	add0x830bd73e4184cef73443c15111a1df14e495c706 [href="https://etherscan.io/address/0x830bd73e4184cef73443c15111a1df14e495c706"  label=<invesment:Nouns<br/><br/><font color="blue">0x830b...c706</font>>]
+	add0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 [href="https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"  label=<liabilities:WETH<br/><br/><font color="blue">0xc02a...6cc2</font>>]
+	add0x00000000000000adc04c56bf30ac9d3c0aaf14dc [href="https://etherscan.io/address/0x00000000000000adc04c56bf30ac9d3c0aaf14dc"  label=<OpenseaSeaport1NFT<br/><br/><font color="blue">0x0000...14dc</font>>]
 	add0xd33526068d116ce69f19a9ee46f0bd304f21a51f [href="https://etherscan.io/address/0xd33526068d116ce69f19a9ee46f0bd304f21a51f"  label=<equity:trading:RPL-rocket-pool<br/><br/><font color="blue">0xd335...a51f</font>>]
-	add0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 [href="https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"  label=<equity:trading:WETH-weth<br/><br/><font color="blue">0xc02a...6cc2</font>>]
 	add0xf3b1b6e83be4d55695f1d30ac3d307d9d5ca98ff [href="https://etherscan.io/address/0xf3b1b6e83be4d55695f1d30ac3d307d9d5ca98ff"  label=<0xf3b1b6e83be4d55695f1d30ac3d307d9d5ca98ff<br/><br/><font color="blue">0xf3b1...98ff</font>>]
 	add0xae2d4617c862309a3d75a0ffb358c7a5009c673f [href="https://etherscan.io/address/0xae2d4617c862309a3d75a0ffb358c7a5009c673f"  label=<0xae2d4617c862309a3d75a0ffb358c7a5009c673f<br/><br/><font color="blue">0xae2d...673f</font>>]
 	add0xd165df4296c85e780509fa1eace0150d945d49fd [href="https://etherscan.io/address/0xd165df4296c85e780509fa1eace0150d945d49fd"  label=<0xd165df4296c85e780509fa1eace0150d945d49fd<br/><br/><font color="blue">0xd165...49fd</font>>]
@@ -67,7 +67,7 @@ labeljust="l";
 	add0x18530d46055f710ea2fc5944ccb3df40222c287b -> add0xf6b6f07862a02c85628b3a9688beae07fea9c863 [fontsize=10 label=<<font color="black">USDC 30000&nbsp;2023-01-05 00:01 Gnosis: Exec</font>>]
 	add0xae2d4617c862309a3d75a0ffb358c7a5009c673f -> add0xf6b6f07862a02c85628b3a9688beae07fea9c863 [fontsize=10 label=<<font color="black">USDC 249159.946&nbsp;2023-01-06 03:38 Transfer</font><br/><font color="black">USDC 25000&nbsp;2023-08-03 16:43 Transfer</font>>]
 	add0xb9a9db5f56ed0d891b4e542381d36b4de5a925a0 -> add0xf6b6f07862a02c85628b3a9688beae07fea9c863 [fontsize=10 label=<<font color="black">USDC 2000000&nbsp;2023-01-06 13:14 Transfer</font>>]
-	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x0000000000a39bb272e79075ade125fd351887ac [fontsize=10 label=<<font color="grey">ETH 4&nbsp;2023-01-10 00:01 Swap</font><br/><font color="grey">ETH 1.9&nbsp;2023-01-10 00:01 Swap</font>>]
+	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x0000000000a39bb272e79075ade125fd351887ac [fontsize=10 label=<<font color="grey">ETH 4&nbsp;2023-01-10 00:01 Deposit</font><br/><font color="grey">ETH 1.9&nbsp;2023-01-10 00:01 Deposit</font>>]
 	add0x0000000000a39bb272e79075ade125fd351887ac -> add0xf6b6f07862a02c85628b3a9688beae07fea9c863 [fontsize=10 label=<<font color="black">ETH 5.9&nbsp;2023-01-10 00:22 Swap</font>>]
 	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x438b17d72da561639f2a1c12f9e02b16ba76e18d [fontsize=10 label=<<font color="black">USDC 396063.29&nbsp;2023-01-10 16:11 Transfer</font>>]
 	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x5c596c6a65f628fc1090853d8eb1927651e9d9b2 [fontsize=10 label=<<font color="black">GOG 146666.7&nbsp;2023-01-13 21:10 0x0502b1c5</font>>]
@@ -288,7 +288,7 @@ labeljust="l";
 	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x53c0efa9e533677bd332e7fc92ff3c72e1cec841 [fontsize=10 label=<<font color="grey">ETH 0.1&nbsp;2024-01-31 12:11 Transfer</font>>]
 	add0x53c0e8c455643a2f65f87c9f133de1e68f3dc841 -> add0xf6b6f07862a02c85628b3a9688beae07fea9c863 [fontsize=10 label=<<font color="grey">ETH 0.000001&nbsp;2024-01-31 12:14 Transfer</font>>]
 	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x43670d6f39bca19ee26462f62339e90a39b01e34 [fontsize=10 label=<<font color="grey">ETH 0.005&nbsp;2024-02-01 14:49 Transfer</font>>]
-	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 [fontsize=10 label=<<font color="grey">ETH 3100&nbsp;2024-02-01 20:11 Swap</font>>]
+	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 [fontsize=10 label=<<font color="grey">ETH 3100&nbsp;2024-02-01 20:11 Deposit</font>>]
 	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x6113fd2c91514e84e6149c6ede47f2e09545253a [fontsize=10 label=<<font color="grey">ETH 0.06529&nbsp;2024-02-08 15:25 0xb047168f</font>>]
 	add0xf6b6f07862a02c85628b3a9688beae07fea9c863 -> add0x3177a46ef4afca9361816e9dc000f967bfce427c [fontsize=10 label=<<font color="grey">ETH 100&nbsp;2024-02-16 15:02 Transfer</font>>]
 	add0x3177a524d3655700056ccc2a1b6e8e68489e427c -> add0xf6b6f07862a02c85628b3a9688beae07fea9c863 [fontsize=10 label=<<font color="grey">ETH 0.000001&nbsp;2024-02-16 15:05 Transfer</font>>]
@@ -362,6 +362,7 @@ labeljust="l";
       color=lightgrey;
       node [style=filled,color=white, shape=plaintext];
       label = "NFT";
+	add0x00000000000000adc04c56bf30ac9d3c0aaf14dc
 }
 
     subgraph cluster_4 {
@@ -371,6 +372,5 @@ labeljust="l";
       label = "ENS";
 	add0xeb3b9f824c8551a58a427aeaaa1044866bb5e28e
 	add0x57757e3d981446d585af0d9ae4d7df6d64647806
-	add0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
 }
 }

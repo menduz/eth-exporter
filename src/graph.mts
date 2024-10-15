@@ -57,7 +57,7 @@ export const graph = {
   receipts: new Map<string, ethConnect.TransactionReceipt>(),
   endBlock: new BigNumber('0'),
   latestTimestamp: new Date(1970, 0, 0),
-  prices: new Map<string /* contract */, { prices: number[][] }>(),
+  prices: new Map<string /* contract */, { prices: [number, ethConnect.BigNumber][] }>(),
   selectors: new Map<string, string>(),
   options: {
     cacheDir: '.cache',
@@ -173,7 +173,7 @@ async function fetchRequiredPrices(contract: string) {
   await fetchSymbolMarketData(token.coingeckoId, contract)
 }
 
-async function fetchPricesCoinGeckoHistorical(symbol: string): Promise<{ prices: number[][] }> {
+async function fetchPricesCoinGeckoHistorical(symbol: string): Promise<{ prices: [number, ethConnect.BigNumber][] }> {
   const result = await fetchWithCache(
     `https://www.coingecko.com/price_charts/export/${encodeURIComponent(
       symbol
@@ -200,10 +200,10 @@ async function fetchPricesCoinGeckoHistorical(symbol: string): Promise<{ prices:
   // remove NaN prices (including header) and coerce types
   const prices = lines
     .filter(($) => $.length && !isNaN($[1]))
-    .map((line) => {
+    .map((line): [number, ethConnect.BigNumber] => {
       // convert first element to timestamp
       const [date, time] = line[0].split(' ')
-      return [new Date(`${date}T${time}Z`).getTime(), +line[1]]
+      return [new Date(`${date}T${time}Z`).getTime(), new ethConnect.BigNumber(line[1])]
     })
 
   return { prices }
@@ -271,12 +271,12 @@ export async function processGraph() {
 
   allowed.forEach((x) => {
     const addr = normalizeAddress(x.platforms.ethereum)
-    const contractAccount = graph.accounts.get(addr)
+    const contractAccountSymbol = graph.accounts.get(addr + ":symbol")
 
     graph.allowedContracts.set(addr, {
       contract: x.platforms.ethereum,
       name: x.name,
-      symbol: contractAccount?.label || x.symbol.toUpperCase(),
+      symbol: contractAccountSymbol?.label || x.symbol.toUpperCase(),
       coingeckoId: x.id,
       present: false
     })
@@ -377,7 +377,6 @@ export function operationTypeBySelector(data: string, tx: string) {
     case data.startsWith('0x3d8d4082'): // executeMetaTransactionV2(tuple mtx,tuple signature)
     case data.startsWith('0x2e95b6c8'):
     case data.startsWith('0x13d79a0b'):
-    case data.startsWith('0xd0e30db0'): // deposit() (WETH)
     case data.startsWith('0x38ed1739'):
     case data.startsWith('0x4f948110'):
     case data.startsWith('0x34b0793b'): // discountedSwap(address caller,tuple desc,tuple[] calls)
@@ -399,6 +398,8 @@ export function operationTypeBySelector(data: string, tx: string) {
     case data.startsWith('0xcb3c28c7'): // trade(address src, uint256 srcAmount, address dest, address destAddress, uint256 maxDestAmount, uint256 minConversionRate, address walletId)
     case data.startsWith('0x2e1a7d4d'): // withdraw weth->eth
       return 'Swap'
+    case data.startsWith('0xd0e30db0'): // deposit() (WETH)
+      return 'Deposit'
     case data.startsWith('0x1a695230'):
     case data.startsWith('0xdb1b6948'):
       return 'Transfer' // Stake

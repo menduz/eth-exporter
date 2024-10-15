@@ -7,13 +7,12 @@ import { log } from './log.mjs'
 import { graph } from './graph.mjs'
 import path from 'path'
 import undici from 'undici'
-  ; (globalThis as any).fetch = undici.fetch
+;(globalThis as any).fetch = undici.fetch
 
 const provider = new HTTPProvider('https://cloudflare-eth.com')
 provider.debug = true
 
 const requestManagerWithoutCache = new RequestManager(provider)
-let currentBlock = new BigNumber('0')
 
 function sleep(ms: number) {
   return new Promise((ok) => setTimeout(ok, ms))
@@ -53,7 +52,7 @@ export async function fetchWithAttempts(url: string) {
     } else {
       try {
         console.log(await req.text())
-      } catch { }
+      } catch {}
     }
     attempts--
     await sleep(time)
@@ -89,7 +88,7 @@ export async function fetchWithCache<T>(url: string, transform: (data: any, from
     } catch (e) {
       try {
         fs.rmSync(cacheFile(hash))
-      } catch { }
+      } catch {}
       throw e
     }
   }
@@ -128,11 +127,8 @@ export async function setEndBlock(value: string) {
 
 export async function initFetcher() {
   await ensureCacheDir()
-  currentBlock = new BigNumber(await requestManagerWithoutCache.eth_blockNumber())
 
-  if (graph.endBlock.toNumber() < 1) graph.endBlock = currentBlock
+  if (graph.endBlock.toNumber() < 1) graph.endBlock = new BigNumber(await requestManagerWithoutCache.eth_blockNumber())
 
-  console.assert(currentBlock.toNumber() > 0, 'invalid current block')
-  console.log('> Current block: ' + currentBlock.toNumber())
   console.log('> Cutoff block: ' + graph.endBlock)
 }

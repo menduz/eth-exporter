@@ -8,6 +8,7 @@ import arg from "arg"
 import path from "path"
 import { dumpSqlite } from "./sqlite.mjs"
 import { dumpHledger } from "./hledger.mjs"
+import { dumpInvestment } from "./investment.mjs"
 
 async function readInput(file: string) {
   log(`> Reading input file ${path.relative(process.cwd(), file)}`)
@@ -111,6 +112,10 @@ async function main() {
     }
     case "hledger": {
       await dumpHledger(graph)
+      break
+    }
+    case "investment": {
+      await dumpInvestment(graph)
       break
     }
     case "sqlite": {
