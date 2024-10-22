@@ -239,19 +239,20 @@ export async function dumpSqlite(graph: Graph) {
   db.close()
 }
 
-function coerce(any: any): any {
+export function coerce(any: any): any {
   if (any instanceof BigNumber) return any.toString()
   if (any instanceof Date)
     try {
       return any.toISOString()
     } catch {
       console.dir({ value: any, number: +any })
+    console.trace()
       return null
     }
   return any ?? null
 }
 
-function mapColumns<T>(array: T[], ...columns: Array<(row: T) => any>) {
+export function mapColumns<T>(array: T[], ...columns: Array<(row: T) => any>) {
   return array.map((elem) => columns.map((getter) => coerce(getter(elem))))
 }
 

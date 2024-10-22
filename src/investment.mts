@@ -3,6 +3,9 @@ import { Graph } from './graph.mjs'
 import { mkdirSync, writeFileSync } from 'fs'
 import ethConnect from 'eth-connect'
 import { resolve } from 'path'
+import { priceDb } from './price-db.mjs'
+import chart from 'asciichart'
+import { memoize } from './memoize.js'
 
 function byDate(a: { date: Date }, b: { date: Date }) {
   if (a.date > b.date) return 1
@@ -55,7 +58,71 @@ export async function dumpInvestment(graph: Graph) {
     stock: Op
   }
 
-  function* generator(): Generator<Op> {
+  const pdb = await priceDb()
+  const stable = new Set(['USD', 'USDC', 'USDT', 'DAI'])
+
+  const priceAt = async function (contractOrSymbol: string, date: Date): Promise<ethConnect.BigNumber> {
+    const key = `priceAt ${contractOrSymbol} ${date.toISOString()}`
+
+    try {
+      console.time(key)
+
+      if (stable.has(contractOrSymbol)) return ethConnect.BigNumber(1)
+      const address = doubleEntry.getContractFromSymbol(contractOrSymbol)
+      const fallback = doubleEntry.priceAt(contractOrSymbol, date)
+      return await pdb.priceAt(contractOrSymbol == 'BTC' ? 'BTC' : address ?? contractOrSymbol, date, () => fallback)
+    } finally {
+      console.timeEnd(key)
+    }
+  }
+
+  const getHistoricalPricesOf = async function (contractOrSymbol: string, from: Date, to: Date) {
+    const key = `histPriceOf ${contractOrSymbol} ${from.toISOString()} to ${to.toISOString()}`
+
+    try {
+      console.time(key)
+
+      if (stable.has(contractOrSymbol)) {
+        return Array.from(generateDates(from, to, 1)).map((date) => {
+          return Object.assign(ethConnect.BigNumber(1), { date })
+        })
+      }
+
+      const address = doubleEntry.getContractFromSymbol(contractOrSymbol)
+      return await pdb.getPrices(contractOrSymbol == 'BTC' ? 'BTC' : address ?? contractOrSymbol, from, to)
+    } finally {
+      console.timeEnd(key)
+    }
+  }
+
+  const getCurrentPrice = memoize(async function (contractOrSymbol: string) {
+    const address = doubleEntry.getContractFromSymbol(contractOrSymbol)
+    return address ? await pdb.currentPrice(address) : ethConnect.BigNumber(Number.NaN)
+  })
+
+  const btcPrice = await getCurrentPrice('BTC')
+
+  const beginGraph = new Date()
+  beginGraph.setDate(beginGraph.getDate() - 15)
+  const now = new Date()
+
+  const dates: Date[] = Array.from(generateDates(beginGraph, now))
+
+  function* generateDates(from: Date, to: Date, hourStep = 12) {
+    const begin = new Date()
+    begin.setDate(from.getDate() - 15)
+    begin.setMilliseconds(0)
+    begin.setSeconds(0)
+    begin.setMinutes(0)
+    begin.setHours(0)
+
+    while (begin < to) {
+      begin.setHours(begin.getHours() + hourStep)
+      yield new Date(begin.getTime())
+    }
+  }
+
+  async function* generator(): AsyncGenerator<Op> {
     for (const [tx, lineItem] of doubleEntry.lineItems) {
       if (lineItem.apparentSwap) {
         const [[address, changes]] = lineItem.selfAccountNetChanges
@@ -63,8 +130,8 @@ export async function dumpInvestment(graph: Graph) {
         if (changes.size == 2) {
           const [[symbol_a, amount_a], [symbol_b, amount_b]] = changes
 
-          let price_a = ethConnect.BigNumber(doubleEntry.priceAt(symbol_a, lineItem.date))
-          let price_b = ethConnect.BigNumber(doubleEntry.priceAt(symbol_b, lineItem.date))
+          let price_a = await priceAt(symbol_a, lineItem.date)
+          let price_b = await priceAt(symbol_b, lineItem.date)
 
           if (price_a.eq(0)) {
             price_a = price_b.multipliedBy(amount_b.abs()).dividedBy(amount_a.abs())
@@ -112,7 +179,7 @@ export async function dumpInvestment(graph: Graph) {
         for (const [address, changes] of lineItem.selfAccountNetChanges) {
           if (changes.size > 2) console.dir(changes)
           for (const [symbol, amount] of changes) {
-            const price = ethConnect.BigNumber(doubleEntry.priceAt(symbol, lineItem.date))
+            const price = await priceAt(symbol, lineItem.date)
 
             yield {
               type: amount.gt(0) ? 'DEPOSIT' : 'WITHDRAW',
@@ -130,7 +197,14 @@ export async function dumpInvestment(graph: Graph) {
     }
   }
 
-  const movements: Op[] = Array.from(generator()).sort(byDate)
+  const movements: Op[] = []
+
+  for await (const x of generator()) {
+    movements.push(x)
+  }
+
+  movements.sort(byDate)
+
   const data: Record<
     string,
     {
@@ -165,7 +239,7 @@ export async function dumpInvestment(graph: Graph) {
   for (let item of movements) {
     if (item.type == 'DEPOSIT' || item.type == 'BUY') {
       const t = getInventory(item.symbol)
-      t.inventory.push({ ...item, original: item, stock: {...item} })
+      t.inventory.push({ ...item, original: item, stock: { ...item } })
     } else if (item.type == 'SELL' || item.type == 'WITHDRAW') {
       const t = getInventory(item.symbol)
       if (item.amount.lt(0)) {
@@ -193,7 +267,7 @@ export async function dumpInvestment(graph: Graph) {
             t.sells.push({
               ...item,
               original: item,
-	      stock: {...inventoryItem},
+              stock: { ...inventoryItem },
               amount: inventoryItem.amount,
               cost: inventoryItem.amount.multipliedBy(inventoryItem.price),
               gain: item.price.minus(inventoryItem.price)
@@ -208,7 +282,7 @@ export async function dumpInvestment(graph: Graph) {
             t.sells.push({
               ...item,
               original: item,
-	      stock: {...inventoryItem},
+              stock: { ...inventoryItem },
               amount: amountToSell,
               cost: amountToSell.multipliedBy(inventoryItem.price),
               gain: amountToSell.multipliedBy(item.price.minus(inventoryItem.price))
@@ -235,11 +309,24 @@ export async function dumpInvestment(graph: Graph) {
     t.currentAverageBuyPrice = t.remainingInventoryCost.dividedBy(Math.max(t.remainingInventory.toNumber(), 1))
   }
 
-  const currentPositions = Array.from(Object.values(data)).flatMap(($) => {
-    return $.inventory
-      .filter(($) => $.type == 'BUY')
-      .map(($) => {
-        const latestPrice = new ethConnect.BigNumber(doubleEntry.latestPrice($.symbol))
+  const chartData: number[][] = []
+
+  const currentPositions: any[] = []
+
+  const pricesOfBtc = await getHistoricalPricesOf('BTC', beginGraph, now)
+
+  function getPriceAt(data: Array<ethConnect.BigNumber & { date: Date }>, date: Date) {
+    for (const x of data) {
+      if (x.date <= date) return x
+    }
+    return null
+  }
+
+  for (const value of Object.values(data)) {
+    const pricesOf$ = await getHistoricalPricesOf(value.symbol, beginGraph, now)
+    for (const $ of value.inventory)
+      if ($.type == 'BUY') {
+        const latestPrice = await getCurrentPrice($.symbol)
         const currentCost = $.amount.multipliedBy(latestPrice)
 
         // ratio of the original stock that we are still holding
@@ -247,9 +334,10 @@ export async function dumpInvestment(graph: Graph) {
 
         // acquisition cost of the remaining (ratio)
         const acqCost = $.original.cost.multipliedBy(ratio)
+        const acqPrice = $.original.price
 
         const originalOp = $.original as TradeOp
-        const soldPartLatestPrice = new ethConnect.BigNumber(doubleEntry.latestPrice(originalOp.other_symbol))
+        const soldPartLatestPrice = await getCurrentPrice(originalOp.other_symbol)
 
         // current price of the sold part if we were holding it. adjusted by the sold part (ratio)
         const soldPartCurrentCost = soldPartLatestPrice
@@ -268,22 +356,50 @@ export async function dumpInvestment(graph: Graph) {
           effect = 'Loss'
         }
 
-        return {
+        const currentCostBtc = currentCost.dividedBy(btcPrice)
+        const acqCostBtc = acqCost.dividedBy(await priceAt('BTC', $.original.date))
+
+        const prices: number[] = []
+
+        for (const date of dates) {
+          const priceAtDate = getPriceAt(pricesOf$, date)
+          const btcPriceAt = getPriceAt(pricesOfBtc, date)
+          if (priceAtDate && btcPriceAt) {
+            const costAt = $.amount.multipliedBy(priceAtDate)
+            prices.push(costAt.dividedBy(btcPriceAt).toNumber())
+          } else {
+            console.dir({
+              symbol: $.symbol,
+              symbol2: value.symbol,
+              date,
+              pricesOf$: priceAtDate ?? pricesOf$.slice(-4),
+              pricesOfBtc: btcPriceAt ?? pricesOfBtc.slice(-4)
+            })
+          }
+        }
+
+        if (prices.length) {
+          chartData.push(prices)
+        }
+
+        currentPositions.push({
           tx: $.tx,
           date: $.date,
-          op: `${originalOp.symbol} ${originalOp.amount.toFixed(3)} @@ ${originalOp.other_symbol} ${originalOp.other_amount.toFixed(3)} ($${originalOp.other_cost.negated().toFixed(3)})`,
+          op: `${originalOp.symbol} ${originalOp.amount.toFixed(3)} @ $ ${acqPrice.toFixed(3).padEnd(4, ' ')} @@ ${originalOp.other_symbol} ${originalOp.other_amount.toFixed(3)} ($${originalOp.other_cost.negated().toFixed(3)})`,
           currentPosition: `(% ${ratio.multipliedBy(100).toFixed(0).padEnd(3, ' ')}) ${$.amount.toFixed(3).padEnd(14, ' ')} @@ $ ${currentCost.toFixed(3).padStart(10, ' ')}`,
-          acqCost: `$ ${acqCost.toFixed(3).padStart(10, ' ')}`,
-          pnl: formatPerformance(currentCost, acqCost),
-          pnlVsHolding: formatPerformance(currentCost, soldPartCurrentCost),
+          'PnL vs USD': formatPerformance(currentCost, acqCost),
+          'PnL vs doing nothing': formatPerformance(currentCost, soldPartCurrentCost),
+          'PnL vs BTC': formatPerformance(currentCostBtc, acqCostBtc),
           effect
-        }
-      })
-  })
+        })
+      }
+  }
+
+  console.log(chart.plot(chartData, { height: 40 }))
 
   function formatPerformance(curr: ethConnect.BigNumber, prev: ethConnect.BigNumber) {
     const performance = curr.minus(prev).dividedBy(prev)
-    return `${accounting(curr.minus(prev))} ${performance.multipliedBy(100).toFixed(1).padStart(5, ' ') + ' %'}`
+    return `$ ${curr.toFixed(3).padStart(10, ' ')} ${accounting(curr.minus(prev), 11)} ${performance.multipliedBy(100).toFixed(1).padStart(5, ' ') + '%'}`
   }
 
   console.log('Current positions:')
@@ -291,8 +407,8 @@ export async function dumpInvestment(graph: Graph) {
 
   const currentPositionsFinal = Array.from(Object.values(data))
     .filter(($) => !$.remainingInventory.eq(0))
-    .flatMap(($) => {
-      const currentPrice = new ethConnect.BigNumber(doubleEntry.latestPrice($.symbol))
+    .map(async ($) => {
+      const currentPrice = await getCurrentPrice($.symbol)
       const currentCost = $.remainingInventory.multipliedBy(currentPrice)
       return {
         'Position @@ Inventory cost': `${`${$.symbol} ${$.remainingInventory.toFixed(3)}`.padEnd(20, ' ')} @@ ${('~' + $.remainingInventoryCost.toFixed(3)).padStart(10, ' ')}`,
@@ -301,7 +417,7 @@ export async function dumpInvestment(graph: Graph) {
       }
     })
 
-  console.table(currentPositionsFinal)
+  console.table(await Promise.all(currentPositionsFinal))
 
   console.log('Finalized operations:')
 
@@ -331,11 +447,12 @@ export async function dumpInvestment(graph: Graph) {
     JSON.stringify({ data, table: currentPositions, sells }, null, 2)
   )
 
-//  console.table(sells.sort(byDate))
+  await pdb.close()
+  //  console.table(sells.sort(byDate))
 }
 
-function accounting(n: ethConnect.BigNumber) {
-  if (n.eq(0)) return '- '
-  if (n.gt(0)) return n.toFixed(3).padStart(12, ' ') + ' '
-  return ('(' + n.toFixed(3).padStart(11, ' ') + ')').padStart(11, ' ')
+function accounting(n: ethConnect.BigNumber, m: number) {
+  if (n.eq(0)) return '0'.padStart(m, ' ') + ' '
+  if (n.gt(0)) return ('+' + n.toFixed(3)).padStart(m, ' ') + ' '
+  return n.toFixed(3).padStart(m, ' ') + ' '
 }

@@ -13,11 +13,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/asciichart": "^1.5.8",
     "arg": "^5.0.2",
+    "asciichart": "^1.5.25",
     "eth-connect": "^6.2.1",
     "fp-future": "^1.0.1",
     "isomorphic-fetch": "^3.0.0",
     "sql-template-tag": "^5.2.0",
+    "sqlite": "^5.1.1",
     "sqlite3": "^5.1.6",
     "undici": "^6.6.2"
   },

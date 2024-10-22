@@ -1,6 +1,9 @@
 import ethConnect, { BigNumber } from 'eth-connect'
 import { txValue } from './draw.mjs'
 import { Account, filterTransfer, getAccountFromAddress, Graph, normalizeAddress, Transfer } from './graph.mjs'
+import { fetchWithAttempts } from './fetcher.mjs'
+import { memoize } from './memoize.js'
+import { log } from './log.mjs'
 
 export type LineItemChange = {
   tx: string
@@ -210,11 +213,13 @@ export function doubleEntryFromGraph(graph: Graph) {
     for (const [addr, c] of graph.allowedContracts) {
       if (c.symbol == symbol && graph.prices.has(addr)) return addr
     }
-    return 'null'
+    return null
   }
 
   function latestPrice(symbol: string) {
-    const prices = graph.prices.get(symbol) ?? graph.prices.get(addressBySymbol(symbol))
+    if (stablecoins.has(symbol.toUpperCase())) return ethConnect.BigNumber(1)
+
+    const prices = graph.prices.get(symbol) ?? graph.prices.get(addressBySymbol(symbol)!)
     if (prices?.prices) {
       return prices.prices[prices.prices.length - 1][1]
     }
@@ -223,21 +228,33 @@ export function doubleEntryFromGraph(graph: Graph) {
 
   const stablecoins = new Set(['DAI', 'USD', 'USDC', 'USDT'])
 
-  function priceAt(symbol: string, date: Date) {
-    if (stablecoins.has(symbol.toUpperCase())) return ethConnect.BigNumber(1)
+  function priceAt(symbol: string, date: Date): [number, ethConnect.BigNumber] {
+    if (stablecoins.has(symbol.toUpperCase())) return [(new Date().getTime() / 1000) >>> 0, ethConnect.BigNumber(1)]
 
-    const prices = graph.prices.get(symbol) ?? graph.prices.get(addressBySymbol(symbol))
+    const prices = graph.prices.get(symbol) ?? graph.prices.get(addressBySymbol(symbol)!)
     if (prices?.prices) {
       const dateNum = date.getTime()
       const list = prices.prices.filter(([when]) => when <= dateNum)
       if (!list.length) {
-	console.dir({ ...prices, dateNum, symbol })
-	return Number.NaN
+        console.dir({ ...prices, dateNum, symbol })
+        return [0, ethConnect.BigNumber(Number.NaN)]
       }
-      return list[list.length - 1][1]
+      return list[list.length - 1]
     }
 
-    return Number.NaN
+    return [0, ethConnect.BigNumber(Number.NaN)]
+  }
+
+  function getContractFromSymbol(symbol: string): null | string {
+    if (symbol.toUpperCase() == 'ETH' || symbol.toUpperCase() == 'BTC' || symbol.toUpperCase() == 'USD') {
+      return symbol
+    }
+
+    if (symbol.startsWith('0x')) return symbol
+
+    const addr = addressBySymbol(symbol)
+    if (addr != symbol) return addr
+    return null
   }
 
   return {
@@ -250,6 +267,7 @@ export function doubleEntryFromGraph(graph: Graph) {
     txs,
     priceAt,
     latestPrice,
-    addressBySymbol
+    addressBySymbol,
+    getContractFromSymbol
   }
 }

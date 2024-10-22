@@ -70,10 +70,11 @@ function transformCoingeckoUrl(url: string): string {
   return url
 }
 
-export async function fetchWithCache<T>(url: string, transform: (data: any, fromCache: boolean) => T): Promise<T> {
+export async function fetchWithCache<T>(url: string, transform: (data: any, fromCache: boolean) => T, silent = false): Promise<T> {
   const finalUrl = url
     .replace(':ETHERSCAN_API_KEY:', encodeURIComponent(graph.options.etherscanApiKey!))
     .replace(':COINGECKO_API_KEY:', encodeURIComponent(graph.options.coingeckoApiKey!))
+    .replace(':END_TIMESTAMP:', encodeURIComponent((graph.latestTimestamp.getTime() / 1000) | 0))
     .replace(':END_BLOCK:', encodeURIComponent(graph.endBlock.toString()))
 
   const hash = sha256hash(finalUrl)
@@ -81,8 +82,8 @@ export async function fetchWithCache<T>(url: string, transform: (data: any, from
   async function r(data: any, fromCache: boolean) {
     try {
       const newData = await transform(data, fromCache)
-      if (!fromCache) log('  Writing to cache ' + hash + ' ' + url)
-      else log('  Cache hit ' + hash + ' ' + url)
+      if (!fromCache) silent || log('  Writing to cache ' + hash + ' ' + url)
+      else silent || log('  Cache hit ' + hash + ' ' + url)
       writeCache(hash, data)
       return newData
     } catch (e) {
